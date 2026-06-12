@@ -2,4 +2,4 @@
 
 Berikut adalah Entity Relationship Diagram dari sistem Mini LMS Classroom.
 
-![ERD](ERD.png)
+![ERD](ERD%20MINI-LMS.drawio.png)
