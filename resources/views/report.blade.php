@@ -1,15 +1,16 @@
+@php
+use Illuminate\Support\Str;
+@endphp
 @extends('layouts.app')
 
-@section('title', 'Report Nilai')
+@section('title', 'Nilai')
 
 @section('content')
 
 {{-- ===== PAGE HEADER ===== --}}
 <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
     <div>
-        <h1 class="fw-bold mb-0" style="font-size: 1.5rem; color: #1e293b;">
-            <i class="bi bi-file-earmark-bar-graph me-2" style="color: #1F7A8C;"></i>Report Nilai
-        </h1>
+        <h5 class="fw-bold mb-0 text-dark">Nilai</h5>
         <p class="text-secondary mb-0 mt-1" style="font-size: 0.875rem;">
             Rekap nilai tugas dari semua kelas yang kamu ikuti
         </p>
@@ -25,7 +26,7 @@
 <div class="row g-3 mb-4">
     {{-- Rata-rata Keseluruhan --}}
     <div class="col-6 col-md-3">
-        <div class="card border-0 shadow-sm rounded-4 h-100 overflow-hidden interactive-card" style="position: relative;">
+        <div class="card report-summary-card border-0 shadow-sm rounded-4 h-100 overflow-hidden interactive-card" style="position: relative;">
             <div style="position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, #1F7A8C, #38bdf8);"></div>
             <div class="card-body p-3 pt-4">
                 <div class="d-flex align-items-center gap-2 mb-2">
@@ -52,7 +53,7 @@
 
     {{-- Total Tugas --}}
     <div class="col-6 col-md-3">
-        <div class="card border-0 shadow-sm rounded-4 h-100 overflow-hidden interactive-card" style="position: relative;">
+        <div class="card report-summary-card border-0 shadow-sm rounded-4 h-100 overflow-hidden interactive-card" style="position: relative;">
             <div style="position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, #7c3aed, #a78bfa);"></div>
             <div class="card-body p-3 pt-4">
                 <div class="d-flex align-items-center gap-2 mb-2">
@@ -71,7 +72,7 @@
 
     {{-- Selesai --}}
     <div class="col-6 col-md-3">
-        <div class="card border-0 shadow-sm rounded-4 h-100 overflow-hidden interactive-card" style="position: relative;">
+        <div class="card report-summary-card border-0 shadow-sm rounded-4 h-100 overflow-hidden interactive-card" style="position: relative;">
             <div style="position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, #16a34a, #4ade80);"></div>
             <div class="card-body p-3 pt-4">
                 <div class="d-flex align-items-center gap-2 mb-2">
@@ -92,7 +93,7 @@
 
     {{-- Sudah Dinilai --}}
     <div class="col-6 col-md-3">
-        <div class="card border-0 shadow-sm rounded-4 h-100 overflow-hidden interactive-card" style="position: relative;">
+        <div class="card report-summary-card border-0 shadow-sm rounded-4 h-100 overflow-hidden interactive-card" style="position: relative;">
             <div style="position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, #b45309, #fbbf24);"></div>
             <div class="card-body p-3 pt-4">
                 <div class="d-flex align-items-center gap-2 mb-2">

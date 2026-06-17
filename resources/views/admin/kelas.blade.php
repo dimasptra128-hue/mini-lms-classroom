@@ -45,38 +45,38 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($courses as $course)
+                    @foreach($courses as $item)
                     <tr style="font-size: 0.88rem;">
                         <td>
                             <div class="d-flex align-items-center gap-3">
-                                <div class="rounded-3 d-flex align-items-center justify-content-center text-white fw-bold" style="width: 40px; height: 40px; background-color: {{ $course->color }};">
-                                    <i class="bi {{ $course->icon ?: 'bi-journal' }} fs-5"></i>
+                                <div class="rounded-3 d-flex align-items-center justify-content-center text-white fw-bold" style="width: 40px; height: 40px; background-color: {{ $item->color }};">
+                                    <i class="bi {{ $item->icon ?: 'bi-journal' }} fs-5"></i>
                                 </div>
                                 <div>
-                                    <div class="fw-bold text-dark">{{ $course->name }}</div>
-                                    <div class="text-secondary small">{{ $course->subject }}</div>
+                                    <div class="fw-bold text-dark">{{ $item->name }}</div>
+                                    <div class="text-secondary small">{{ $item->subject }}</div>
                                 </div>
                             </div>
                         </td>
                         <td>
-                            <code class="bg-light px-2 py-1 rounded-3 text-dark border font-monospace fw-bold" style="font-size: 0.85rem;">{{ $course->code }}</code>
+                            <code class="bg-light px-2 py-1 rounded-3 text-dark border font-monospace fw-bold" style="font-size: 0.85rem;">{{ $item->code }}</code>
                         </td>
-                        <td class="text-dark fw-semibold">{{ $course->teacher_name }}</td>
+                        <td class="text-dark fw-semibold">{{ $item->teacher_name }}</td>
                         <td>
                             <span class="badge bg-light text-dark border px-3 py-2 rounded-3 fw-bold">
-                                <i class="bi bi-people-fill me-1 text-danger"></i> {{ $course->users_count }} Anggota
+                                <i class="bi bi-people-fill me-1 text-danger"></i> {{ $item->users_count }} Anggota
                             </span>
                         </td>
-                        <td class="text-secondary">{{ $course->created_at->format('d M Y, H:i') }}</td>
+                        <td class="text-secondary">{{ $item->created_at->format('d M Y, H:i') }}</td>
                         <td class="text-center">
                             <div class="d-inline-flex gap-1.5">
                                 {{-- Button Anggota --}}
-                                <button type="button" class="btn btn-sm btn-outline-primary px-2.5 py-1 rounded-3 fw-semibold d-inline-flex align-items-center gap-1" style="font-size: 0.8rem;" data-bs-toggle="modal" data-bs-target="#membersModal{{ $course->id }}">
+                                <button type="button" class="btn btn-sm btn-outline-primary px-2.5 py-1 rounded-3 fw-semibold d-inline-flex align-items-center gap-1" style="font-size: 0.8rem;" data-bs-toggle="modal" data-bs-target="#membersModal{{ $item->id }}">
                                     <i class="bi bi-people"></i> Anggota
                                 </button>
 
                                 {{-- Button Hapus --}}
-                                <form action="{{ route('admin.courses.delete', $course->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus kelas {{ $course->name }}? Semua materi, tugas, komentar, dan progres siswa di kelas ini akan dihapus secara permanen.')">
+                                <form action="{{ route('admin.courses.delete', $item->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus kelas {{ $item->name }}? Semua materi, tugas, komentar, dan progres siswa di kelas ini akan dihapus secara permanen.')">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="btn btn-sm btn-outline-danger px-2.5 py-1 rounded-3 fw-semibold d-inline-flex align-items-center gap-1" style="font-size: 0.8rem;">
@@ -86,18 +86,27 @@
                             </div>
 
                             {{-- Modal Anggota Kelas --}}
-                            <div class="modal fade text-start" id="membersModal{{ $course->id }}" tabindex="-1" aria-labelledby="membersModalLabel{{ $course->id }}" aria-hidden="true">
+                            <div class="modal fade text-start" id="membersModal{{ $item->id }}" tabindex="-1" aria-labelledby="membersModalLabel{{ $item->id }}" aria-hidden="true">
                                 <div class="modal-dialog modal-dialog-centered">
                                     <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
                                         <div class="modal-header border-0 pb-0 px-4 pt-4">
-                                            <h5 class="modal-title fw-bold text-dark" id="membersModalLabel{{ $course->id }}">Anggota Kelas: {{ $course->name }}</h5>
+                                            <h5 class="modal-title fw-bold text-dark" id="membersModalLabel{{ $item->id }}">Anggota Kelas: {{ $item->name }}</h5>
                                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                         </div>
                                         <div class="modal-body px-4 py-3" style="max-height: 400px; overflow-y: auto;">
                                             {{-- List Guru --}}
+                                            @php
+                                                $usersCollection = collect($item->getRelationValue('users') ?? $item->getAttribute('users') ?? []);
+                                                $teachers = $usersCollection->filter(function ($user) {
+                                                    return data_get($user, 'pivot.role') === 'teacher';
+                                                });
+                                                $students = $usersCollection->filter(function ($user) {
+                                                    return data_get($user, 'pivot.role') === 'student';
+                                                });
+                                            @endphp
                                             <h6 class="fw-bold text-secondary mb-3 small" style="letter-spacing: 0.05em; text-transform: uppercase;">Pengajar</h6>
                                             <div class="d-flex flex-column gap-3 mb-4">
-                                                @forelse($course->users->where('pivot.role', 'teacher') as $teacher)
+                                                @forelse($teachers as $teacher)
                                                     <div class="d-flex align-items-center justify-content-between gap-3">
                                                         <div class="d-flex align-items-center gap-2.5">
                                                             <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold bg-primary" style="width: 34px; height: 34px; font-size: 0.75rem;">
@@ -118,7 +127,7 @@
                                             {{-- List Siswa --}}
                                             <h6 class="fw-bold text-secondary mb-3 small" style="letter-spacing: 0.05em; text-transform: uppercase;">Siswa / Anggota</h6>
                                             <div class="d-flex flex-column gap-3">
-                                                @forelse($course->users->where('pivot.role', 'student') as $student)
+                                                @forelse($students as $student)
                                                     <div class="d-flex align-items-center justify-content-between gap-3">
                                                         <div class="d-flex align-items-center gap-2.5">
                                                             <div class="rounded-circle d-flex align-items-center justify-content-center text-dark fw-bold bg-light" style="width: 34px; height: 34px; font-size: 0.75rem;">
@@ -130,7 +139,7 @@
                                                             </div>
                                                         </div>
                                                         
-                                                        <form action="{{ route('admin.courses.kick', [$course->id, $student->id]) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin mengeluarkan siswa {{ $student->name }} dari kelas ini?')">
+                                                        <form action="{{ route('admin.courses.kick', [$item->id, $student->id]) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin mengeluarkan siswa {{ $student->name }} dari kelas ini?')">
                                                             @csrf
                                                             @method('DELETE')
                                                             <button type="submit" class="btn btn-sm btn-outline-danger px-2.5 py-1 rounded-3" style="font-size: 0.72rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.25rem;">
@@ -151,11 +160,12 @@
                             </div>
                         </td>
                     </tr>
-                    @empty
+                    @endforeach
+                    @if($courses->isEmpty())
                     <tr>
                         <td colspan="6" class="text-center text-secondary py-4">Tidak ada data kelas.</td>
                     </tr>
-                    @endforelse
+                    @endif
                 </tbody>
             </table>
         </div>

@@ -24,6 +24,27 @@
 
 {{-- Task Detail Content --}}
 <div class="row g-4">
+@php
+    // Normalize comments to a Collection of objects. Support DB relation, JSON attribute, or null.
+    $commentsRaw = null;
+    if (isset($task) && (isset($task->comments))) {
+        $commentsRaw = $task->comments;
+    }
+    if ($commentsRaw instanceof \Illuminate\Support\Collection) {
+        $comments = $commentsRaw;
+    } else {
+        if (is_string($commentsRaw)) {
+            $commentsRaw = json_decode($commentsRaw, true) ?: [];
+        }
+        $comments = collect($commentsRaw ?: [])->map(function($c) {
+            $obj = is_object($c) ? $c : (object) $c;
+            if (!isset($obj->user) && isset($obj->user_id)) {
+                $obj->user = \App\Models\User::find($obj->user_id);
+            }
+            return $obj;
+        });
+    }
+@endphp
     {{-- Left Column: Task Instructions --}}
     <div class="col-lg-8 col-12">
         <div class="card border-0 shadow-sm rounded-4 bg-white p-4 p-md-5 mb-4">
@@ -47,6 +68,15 @@
                 <div class="text-md-end text-start mt-2 mt-md-0 flex-shrink-0">
                     <div class="fw-semibold text-danger" style="font-size: 0.88rem;">Tenggat: {{ $task->due_date }}</div>
                     <span class="text-secondary small">100 Poin</span>
+                    @if($userRole === 'teacher')
+                        <form action="{{ route('tasks.delete', [$course->id, $task->id]) }}" method="POST" class="mt-3">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="btn btn-sm btn-outline-danger rounded-3 px-3 fw-semibold" style="font-size: 0.78rem;">
+                                <i class="bi bi-trash me-1"></i> Hapus Tugas
+                            </button>
+                        </form>
+                    @endif
                 </div>
             </div>
 
@@ -77,8 +107,8 @@
                             </div>
                         </div>
                         @if($task->file_path)
-                            <a href="{{ asset('storage/' . $task->file_path) }}" download class="btn btn-sm btn-outline-secondary rounded-3 px-3 d-flex align-items-center gap-1" style="font-size: 0.78rem;">
-                                <i class="bi bi-download"></i> Unduh
+                            <a href="{{ asset('storage/' . $task->file_path) }}" download class="btn btn-sm btn-outline-secondary rounded-3 px-3 d-flex align-items-center gap-1 download-btn" style="font-size: 0.78rem;">
+                                <i class="bi bi-download download-icon"></i> <span class="download-text">Unduh</span>
                             </a>
                         @endif
                     </div>
@@ -92,17 +122,24 @@
                 <i class="bi bi-chat-dots-fill" style="color: {{ $course->color }};"></i>
                 Komentar &amp; Jawaban
                 <span class="badge rounded-pill fw-semibold ms-1" style="background-color: {{ $course->color }}15; color: {{ $course->color }}; font-size: 0.72rem;">
-                    {{ $task->comments->count() }}
+                    {{ $comments->count() }}
                 </span>
             </h6>
 
             {{-- Comment / Answer Form --}}
             <form action="{{ route('comments.store', [$course->id, 'tasks', $task->id]) }}" method="POST" class="mb-4">
                 @csrf
+                <input type="hidden" name="reply_to" id="replyToInput" value="">
+                <div id="replyContext" class="d-none mb-3 rounded-3 p-3" style="background-color: #f8fafc; border: 1px solid #cbd5e1;">
+                    <div class="d-flex align-items-center justify-content-between gap-3">
+                        <div class="text-secondary small">Membalas komentar <span id="replyTargetName" class="fw-semibold text-dark"></span></div>
+                        <button type="button" class="btn btn-sm btn-light btn-outline-secondary rounded-3" onclick="cancelReply()">Batal</button>
+                    </div>
+                </div>
                 <div class="d-flex gap-3 align-items-start">
                     <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold flex-shrink-0"
                          style="width: 38px; height: 38px; font-size: 0.8rem; background-color: {{ $course->color }};">
-                        {{ strtoupper(substr(Auth::user()->name, 0, 2)) }}
+                        {{ strtoupper(substr(optional(auth()->user())->name ?? 'U', 0, 2)) }}
                     </div>
                     <div class="flex-grow-1">
                         <textarea class="form-control" name="body" rows="2"
@@ -127,24 +164,37 @@
 
             {{-- Comments List --}}
             <div class="d-flex flex-column gap-3">
-                @forelse($task->comments as $comment)
+                @php
+                    $commentsById = $comments->keyBy('id');
+                @endphp
+                @forelse($comments as $comment)
                     <div class="d-flex gap-3 align-items-start comment-item">
                         <div class="rounded-circle d-flex align-items-center justify-content-center fw-bold flex-shrink-0"
                              style="width: 36px; height: 36px; font-size: 0.75rem;
                                     background-color: {{ $comment->user_id === $course->creator_id ? $course->color : '#f1f5f9' }};
                                     color: {{ $comment->user_id === $course->creator_id ? '#fff' : '#475569' }};">
-                            {{ strtoupper(substr($comment->user->name, 0, 2)) }}
+                                    {{ strtoupper(substr(optional($comment->user)->name ?? ($comment->name ?? 'U'), 0, 2)) }}
                         </div>
                         <div class="flex-grow-1">
                             <div class="p-3 rounded-4" style="background-color: #f8fafc; border: 1px solid #e2e8f0;">
                                 <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
-                                    <span class="fw-bold text-dark" style="font-size: 0.85rem;">{{ $comment->user->name }}</span>
+                                    <span class="fw-bold text-dark" style="font-size: 0.85rem;">{{ optional($comment->user)->name ?? ($comment->name ?? 'Pengguna') }}</span>
                                     @if($comment->user_id === $course->creator_id)
                                         <span class="badge rounded-pill" style="background-color: {{ $course->color }}15; color: {{ $course->color }}; font-size: 0.68rem; font-weight: 600;">Pengajar</span>
                                     @endif
-                                    <span class="text-secondary" style="font-size: 0.73rem;">{{ $comment->created_at->diffForHumans() }}</span>
+                                    <span class="text-secondary" style="font-size: 0.73rem;">{{ isset($comment->created_at) ? \Carbon\Carbon::parse($comment->created_at)->diffForHumans() : '' }}</span>
                                 </div>
-                                <p class="text-dark mb-0" style="font-size: 0.88rem; line-height: 1.6; white-space: pre-line;">{{ $comment->body }}</p>
+                                @if(!empty($comment->reply_to) && isset($commentsById[$comment->reply_to]))
+                                    <div class="mb-2 rounded-3 py-2 px-3" style="background-color: rgba(15, 23, 42, 0.04); border: 1px solid #e2e8f0;">
+                                        <span class="text-secondary small">Balasan untuk <strong>{{ optional($commentsById[$comment->reply_to]->user)->name ?? ($commentsById[$comment->reply_to]->name ?? 'Komentar') }}</strong></span>
+                                    </div>
+                                @endif
+                                <p class="text-dark mb-0" style="font-size: 0.88rem; line-height: 1.6; white-space: pre-line;">{{ $comment->body ?? '' }}</p>
+                                <div class="mt-3 d-flex justify-content-end">
+                                    <button type="button" class="btn btn-sm btn-link text-secondary" onclick="setReply({{ $comment->id }}, '{{ addslashes(optional($comment->user)->name ?? ($comment->name ?? 'Pengguna')) }}')">
+                                        <i class="bi bi-reply"></i> Balas
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -166,40 +216,59 @@
         <div class="card border-0 shadow-sm rounded-4 bg-white p-4 mb-4">
             <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
                 <h6 class="fw-bold text-dark mb-0" style="font-size: 0.95rem;">Tugas Anda</h6>
-                @if($task->status === 'Selesai')
+                @php
+                    $submissionsRaw = $task->submissions ?? [];
+                    if (is_string($submissionsRaw)) {
+                        $submissionsRaw = json_decode($submissionsRaw, true) ?: [];
+                    }
+                    $userSubmission = $submissionsRaw[auth()->id()] ?? null;
+                @endphp
+                @if($userSubmission && data_get($userSubmission, 'status') === 'Selesai')
                     <span class="badge rounded-pill text-success" style="background-color: #dcfce7; font-size: 0.75rem; font-weight: 600;">Diserahkan</span>
                 @else
                     <span class="badge rounded-pill text-warning" style="background-color: #fff7ed; font-size: 0.75rem; font-weight: 600;">Ditugaskan</span>
                 @endif
             </div>
 
-            @if($task->status === 'Selesai')
+            @if($userSubmission && data_get($userSubmission, 'status') === 'Selesai')
                 <div class="py-3 text-center">
                     <div class="rounded-circle bg-success bg-opacity-10 d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 54px; height: 54px;">
                         <i class="bi bi-check-circle-fill text-success fs-3"></i>
                     </div>
                     <p class="text-dark fw-semibold small mb-1">Pekerjaan Anda telah selesai</p>
-                    <p class="text-secondary mb-3" style="font-size: 0.75rem;">Diserahkan tepat waktu pada {{ now()->isoFormat('D MMM YYYY') }}</p>
-                    <button class="btn btn-outline-secondary w-100 rounded-3 small" style="font-size: 0.85rem; font-weight: 600;">Batalkan Pengiriman</button>
+                    <p class="text-secondary mb-3" style="font-size: 0.75rem;">Diserahkan pada {{ \Carbon\Carbon::parse(data_get($userSubmission, 'submitted_at', now()))->isoFormat('D MMM YYYY') }}</p>
+                    @if(data_get($userSubmission,'file_path'))
+                        <div class="mb-2">
+                            <a href="{{ asset('storage/' . data_get($userSubmission,'file_path')) }}" download class="btn btn-sm btn-outline-secondary w-100 rounded-3 small mb-2">Unduh Kiriman</a>
+                        </div>
+                    @endif
+                    <form action="{{ route('tasks.cancelSubmission', [$course->id, $task->id]) }}" method="POST">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="btn btn-outline-secondary w-100 rounded-3 small" style="font-size: 0.85rem; font-weight: 600;">Batalkan Pengiriman</button>
+                    </form>
                 </div>
             @else
                 <div class="py-2">
-                    <div class="mb-3">
-                        <div class="p-3 border rounded-3 text-center bg-light bg-opacity-30 cursor-pointer" 
-                             onclick="document.getElementById('taskSubmitFile').click()"
-                             style="border-style: dashed !important; border-color: #cbd5e1 !important;">
-                            <i class="bi bi-plus-lg fs-5 text-secondary d-block mb-1"></i>
-                            <span class="small fw-semibold text-secondary">Tambah atau buat file jawaban</span>
-                            <input type="file" id="taskSubmitFile" style="display:none;" onchange="fileSelected(this)">
+                    <form id="submitForm" action="{{ route('tasks.submit', [$course->id, $task->id]) }}" method="POST" enctype="multipart/form-data">
+                        @csrf
+                        <div class="mb-3">
+                            <div class="p-3 border rounded-3 text-center bg-light bg-opacity-30 cursor-pointer" 
+                                 onclick="document.getElementById('taskSubmitFile').click()"
+                                 style="border-style: dashed !important; border-color: #cbd5e1 !important;">
+                                <i class="bi bi-plus-lg fs-5 text-secondary d-block mb-1"></i>
+                                <span class="small fw-semibold text-secondary">Tambah atau buat file jawaban</span>
+                                <input type="file" id="taskSubmitFile" name="submission_file" style="display:none;" onchange="fileSelected(this)">
+                            </div>
+                            <div id="fileSelectedDisplay" class="d-none p-2 border rounded-3 align-items-center justify-content-between mt-2 bg-light">
+                                <span class="small text-truncate text-dark fw-medium" style="max-width: 200px;" id="selectedFileName">file.pdf</span>
+                                <button type="button" class="btn-close" style="font-size:0.75rem;" onclick="removeSelectedFile()"></button>
+                            </div>
                         </div>
-                        <div id="fileSelectedDisplay" class="d-none p-2 border rounded-3 align-items-center justify-content-between mt-2 bg-light">
-                            <span class="small text-truncate text-dark fw-medium" style="max-width: 200px;" id="selectedFileName">file.pdf</span>
-                            <button type="button" class="btn-close" style="font-size:0.75rem;" onclick="removeSelectedFile()"></button>
-                        </div>
-                    </div>
-                    <button class="btn text-white w-100 rounded-3" onclick="submitWork()" style="background-color: {{ $course->color }}; font-weight: 600; font-size: 0.85rem; border: none; padding: 0.6rem;">
-                        Tandai sebagai Selesai
-                    </button>
+                        <button id="submitBtn" type="submit" class="btn text-white w-100 rounded-3" style="background-color: {{ $course->color }}; font-weight: 600; font-size: 0.85rem; border: none; padding: 0.6rem;">
+                            Tandai sebagai Selesai
+                        </button>
+                    </form>
                 </div>
             @endif
         </div>
@@ -275,16 +344,29 @@ function fileSelected(el) {
         document.getElementById('selectedFileName').innerText = el.files[0].name;
         document.getElementById('fileSelectedDisplay').classList.remove('d-none');
         document.getElementById('fileSelectedDisplay').classList.add('d-flex');
+        var btn = document.getElementById('submitBtn');
+        if (btn) btn.innerText = 'Serahkan Tugas';
     }
 }
 function removeSelectedFile() {
     document.getElementById('taskSubmitFile').value = '';
     document.getElementById('fileSelectedDisplay').classList.remove('d-flex');
     document.getElementById('fileSelectedDisplay').classList.add('d-none');
+    var btn = document.getElementById('submitBtn');
+    if (btn) btn.innerText = 'Tandai sebagai Selesai';
 }
-function submitWork() {
-    alert('Pekerjaan Anda berhasil diserahkan!');
-    window.location.reload();
+// The actual submission is handled via the submit form (`#submitForm`).
+function setReply(commentId, commenterName) {
+    document.getElementById('replyToInput').value = commentId;
+    document.getElementById('replyTargetName').innerText = commenterName;
+    document.getElementById('replyContext').classList.remove('d-none');
+    document.getElementById('replyContext').classList.add('d-flex');
+    document.querySelector('textarea[name="body"]').focus();
+}
+function cancelReply() {
+    document.getElementById('replyToInput').value = '';
+    document.getElementById('replyContext').classList.add('d-none');
+    document.getElementById('replyContext').classList.remove('d-flex');
 }
 </script>
 

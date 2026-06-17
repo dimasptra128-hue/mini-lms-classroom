@@ -9,8 +9,10 @@ use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use App\Models\Course;
+use App\Models\Task;
 
-#[Fillable(['name', 'email', 'password'])]
+#[Fillable(['name', 'email', 'password', 'role', 'avatar'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -35,6 +37,16 @@ class User extends Authenticatable
      */
     public function isAdmin(): bool
     {
-        return true; // Set to true for mock styling purposes
+        return $this->role === 'admin';
+    }
+
+    public function courses()
+    {
+        return $this->belongsToMany(Course::class)->withPivot('role');
+    }
+
+    public function tasks()
+    {
+        return $this->hasManyThrough(Task::class, Course::class, 'creator_id', 'course_id', 'id', 'id');
     }
 }

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'My Courses')
+@section('title', 'Kelas')
 
 @section('content')
 
@@ -26,7 +26,7 @@
 
 <div class="d-flex align-items-center justify-content-between mb-4">
     <div>
-        <h5 class="fw-bold mb-0 text-dark">My Courses</h5>
+        <h5 class="fw-bold mb-0 text-dark">Kelas</h5>
         <p class="text-secondary mb-0 small">Semua kelas yang sedang kamu ikuti atau ajar</p>
     </div>
     <a href="#" class="btn btn-gabung-kelas" data-bs-toggle="modal" data-bs-target="#modalGabungKelas">

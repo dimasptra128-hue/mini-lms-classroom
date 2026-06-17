@@ -1,11 +1,11 @@
 @extends('layouts.app')
 
-@section('title', 'Classwork & Tugas')
+@section('title', 'Tugas')
 
 @section('content')
 
 <div class="mb-4">
-    <h5 class="fw-bold mb-0 text-dark">Classwork</h5>
+    <h5 class="fw-bold mb-0 text-dark">Tugas</h5>
     <p class="text-secondary mb-0 small">Semua tugas dari kelas yang kamu ikuti</p>
 </div>
 
@@ -37,7 +37,7 @@
                     <div class="text-secondary" style="font-size: 0.78rem;">{{ $task->course->name }} · Batas: {{ $task->due_date }}</div>
                     @if($task->file_name)
                         <div class="mt-1">
-                            <a href="#" class="btn btn-light btn-sm d-inline-flex align-items-center gap-1.5 text-secondary border px-2 py-0.5 rounded-2" style="font-size: 0.72rem; text-decoration: none;">
+                            <a href="{{ asset('storage/' . $task->file_path) }}" download class="btn btn-light btn-sm d-inline-flex align-items-center gap-1.5 text-secondary border px-2 py-0.5 rounded-2" style="font-size: 0.72rem; text-decoration: none;">
                                 <i class="bi bi-file-earmark-arrow-down-fill text-danger"></i>
                                 <span class="text-dark fw-medium text-truncate" style="max-width: 180px;">{{ $task->file_name }}</span>
                             </a>

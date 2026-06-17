@@ -3,6 +3,23 @@
 @section('title', $course->name)
 
 @section('content')
+ 
+@php
+    // Normalize materials and tasks so view works whether they're relations or JSON attributes
+    $materials = isset($materialModels) ? collect($materialModels) : collect();
+
+    $tasksRaw = $course->relationLoaded('tasks') ? $course->tasks : ($course->tasks ?? []);
+    if (is_string($tasksRaw)) {
+        $tasksRaw = json_decode($tasksRaw, true) ?: [];
+    }
+    $tasks = collect($tasksRaw)->map(function($t){ return is_object($t) ? $t : (object) $t; });
+@endphp
+@php
+    // If controller provided concrete Task models, prefer them
+    if (isset($taskModels)) {
+        $tasks = collect($taskModels);
+    }
+@endphp
 
 {{-- Alert Messages --}}
 @if (session('success'))
@@ -43,7 +60,7 @@
                         <i class="bi bi-box-arrow-right"></i> Keluar Kelas
                     </button>
                 </form>
-            @elseif($course->creator_id === Auth::id())
+            @elseif($course->creator_id === auth()->id())
                 <form action="{{ route('courses.destroy', $course->id) }}" method="POST" onsubmit="return confirm('Apakah kamu yakin ingin menghapus kelas {{ $course->name }}? Semua materi, tugas, dan nilai di kelas ini akan dihapus permanen.')">
                     @csrf
                     @method('DELETE')
@@ -138,12 +155,12 @@
                     <div class="d-flex gap-3 align-items-start">
                         <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold"
                              style="width: 40px; height: 40px; font-size: 0.85rem; background-color: {{ $course->color }}; flex-shrink: 0;">
-                            {{ strtoupper(substr(Auth::user()->name, 0, 2)) }}
+                            {{ strtoupper(substr(auth()->user()->name, 0, 2)) }}
                         </div>
                         <div class="flex-grow-1">
                             <div class="rounded-3 border px-3 py-2 text-secondary bg-light bg-opacity-50 cursor-pointer" 
                                  style="font-size: 0.88rem;" 
-                                 onclick="bootstrap.Tab.getInstance(document.getElementById('materi-tab')).show();">
+                                 onclick="openMaterialTab();">
                                 Bagikan pengumuman atau materi baru dengan kelas...
                             </div>
                         </div>
@@ -208,7 +225,7 @@
                 <h6 class="fw-bold mb-0 text-dark">Daftar Materi</h6>
                 <p class="text-secondary mb-0 small">Bahan pembelajaran untuk diunduh dan dipelajari</p>
             </div>
-            @if($userRole === 'teacher' || $course->creator_id === Auth::user()->id)
+            @if($userRole === 'teacher' || $course->creator_id === auth()->id())
                 <button type="button" class="btn text-white px-3 py-2 rounded-3 d-flex align-items-center gap-1.5 fw-semibold" 
                         style="background-color: {{ $course->color }}; font-size: 0.82rem;"
                         data-bs-toggle="modal" data-bs-target="#modalTambahMateri">
@@ -217,9 +234,9 @@
             @endif
         </div>
 
-        @if($course->materials->count() > 0)
+        @if($materials->count() > 0)
             <div class="row g-2">
-                @foreach($course->materials as $mat)
+                @foreach($materials as $mat)
                 <div class="col-12">
                     <div class="card border-0 shadow-sm rounded-4 bg-white p-3 hover-shadow transition-all" style="border-left: 4px solid {{ $course->color }} !important;">
                         <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap flex-sm-nowrap">
@@ -260,7 +277,7 @@
                 <h6 class="fw-bold mb-0 text-dark">Daftar Tugas Kelas</h6>
                 <p class="text-secondary mb-0 small">Kumpulan latihan dan ujian kelas</p>
             </div>
-            @if($userRole === 'teacher' || $course->creator_id === Auth::user()->id)
+            @if($userRole === 'teacher' || $course->creator_id === auth()->id())
                 <button type="button" class="btn text-white px-3 py-2 rounded-3 d-flex align-items-center gap-1.5 fw-semibold" 
                         style="background-color: {{ $course->color }}; font-size: 0.82rem;"
                         data-bs-toggle="modal" data-bs-target="#modalTambahTugas">
@@ -269,10 +286,10 @@
             @endif
         </div>
 
-        @if($course->tasks->count() > 0)
+        @if($tasks->count() > 0)
             <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden">
-                @foreach ($course->tasks as $i => $task)
-                <div class="px-4 py-3 d-flex align-items-center justify-content-between gap-3 {{ $i !== $course->tasks->count() - 1 ? 'border-bottom' : '' }} flex-wrap flex-sm-nowrap">
+                @foreach ($tasks as $i => $task)
+                <div class="px-4 py-3 d-flex align-items-center justify-content-between gap-3 {{ $i !== $tasks->count() - 1 ? 'border-bottom' : '' }} flex-wrap flex-sm-nowrap">
                     <div class="d-flex align-items-center gap-3">
                         <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0"
                              style="width: 40px; height: 40px; background-color: {{ $course->color }}1a;">
@@ -281,6 +298,11 @@
                         <div>
                             <div class="fw-bold small text-dark" style="font-size: 0.9rem;">{{ $task->title }}</div>
                             <div class="text-secondary" style="font-size: 0.75rem;">Tenggat: {{ $task->due_date }}</div>
+                            @if(!empty($task->file_name))
+                                <div class="text-secondary mt-1" style="font-size: 0.7rem;">
+                                    <i class="bi bi-paperclip me-1"></i>{{ $task->file_name }}
+                                </div>
+                            @endif
                         </div>
                     </div>
                     <div class="d-flex align-items-center gap-2 ms-auto ms-sm-0 flex-shrink-0">
@@ -385,7 +407,7 @@
 </div>
 
 {{-- MODAL: TAMBAH MATERI (TEACHER ONLY) --}}
-@if($userRole === 'teacher' || $course->creator_id === Auth::user()->id)
+@if($userRole === 'teacher' || $course->creator_id === auth()->id())
 <div class="modal fade" id="modalTambahMateri" tabindex="-1" aria-labelledby="modalTambahMateriLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg" style="border-radius: 16px; overflow: hidden;">
@@ -447,7 +469,7 @@
 @endif
 
 {{-- MODAL: TAMBAH TUGAS (TEACHER ONLY) --}}
-@if($userRole === 'teacher' || $course->creator_id === Auth::user()->id)
+@if($userRole === 'teacher' || $course->creator_id === auth()->id())
 <div class="modal fade" id="modalTambahTugas" tabindex="-1" aria-labelledby="modalTambahTugasLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg" style="border-radius: 16px; overflow: hidden;">
@@ -485,7 +507,7 @@
                         <label class="form-label-custom">Tenggat Waktu <span class="text-danger">*</span></label>
                         <div class="input-group-custom">
                             <span class="input-group-icon"><i class="bi bi-calendar3"></i></span>
-                            <input type="text" class="form-control-custom" name="due_date" required placeholder="Contoh: Besok, 23:59 atau Jumat, 12:00">
+                            <input type="datetime-local" class="form-control-custom" name="due_date" required>
                         </div>
                     </div>
 
@@ -543,7 +565,15 @@ function copyCode(code) {
 }
 function openMaterialTab() {
     const triggerEl = document.querySelector('#materi-tab');
-    bootstrap.Tab.getInstance(triggerEl).show();
+    const bsTab = bootstrap.Tab.getInstance(triggerEl);
+    if (bsTab) {
+        bsTab.show();
+    }
+    const modalEl = document.getElementById('modalTambahMateri');
+    if (modalEl) {
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+    }
     window.scrollTo({ top: triggerEl.offsetTop - 100, behavior: 'smooth' });
 }
 function openTasksTab() {
