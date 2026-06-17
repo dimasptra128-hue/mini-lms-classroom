@@ -4,6 +4,19 @@
 
 @section('content')
 
+@php
+    $materialCommentsRaw = $material->comments ?? [];
+    if (is_string($materialCommentsRaw)) {
+        $materialCommentsRaw = json_decode($materialCommentsRaw, true) ?: [];
+    }
+    $materialComments = $materialCommentsRaw instanceof \Illuminate\Support\Collection ? $materialCommentsRaw : collect($materialCommentsRaw)->map(function ($comment) {
+        return is_object($comment) ? $comment : (object) $comment;
+    });
+
+    $commentUserIds = $materialComments->pluck('user_id')->filter()->unique()->toArray();
+    $commentUserNames = \App\Models\User::whereIn('id', $commentUserIds)->pluck('name', 'id')->toArray();
+@endphp
+
 {{-- Alert Messages --}}
 @if (session('success'))
     <div class="alert alert-success alert-dismissible fade show border-0 rounded-4 shadow-sm mb-4" role="alert" style="background-color: #dcfce7; color: #16a34a; font-family: var(--font-sans);">
@@ -28,20 +41,31 @@
         {{-- Material Info Card --}}
         <div class="card border-0 shadow-sm rounded-4 bg-white p-4 p-md-5 mb-4">
             {{-- Material Header --}}
-            <div class="d-flex align-items-center gap-3 border-bottom pb-4 mb-4">
-                <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0"
-                     style="width: 52px; height: 52px; background-color: {{ $course->color }}15;">
-                    <i class="bi bi-file-earmark-text-fill" style="color: {{ $course->color }}; font-size: 1.6rem;"></i>
-                </div>
-                <div>
-                    <span class="text-secondary small fw-medium" style="font-size: 0.8rem;">Materi Pelajaran</span>
-                    <h4 class="fw-bold text-dark mb-1" style="font-size: 1.4rem; letter-spacing: -0.01em;">{{ $material->title }}</h4>
-                    <div class="d-flex align-items-center gap-2 text-secondary" style="font-size: 0.78rem;">
-                        <span>Oleh: <strong>{{ $course->teacher_name }}</strong></span>
-                        <span>·</span>
-                        <span>Diunggah {{ $material->created_at->isoFormat('D MMMM YYYY, HH:mm') }}</span>
+            <div class="d-flex align-items-start gap-3 border-bottom pb-4 mb-4 justify-content-between flex-wrap flex-md-nowrap">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0"
+                         style="width: 52px; height: 52px; background-color: {{ $course->color }}15;">
+                        <i class="bi bi-file-earmark-text-fill" style="color: {{ $course->color }}; font-size: 1.6rem;"></i>
+                    </div>
+                    <div>
+                        <span class="text-secondary small fw-medium" style="font-size: 0.8rem;">Materi Pelajaran</span>
+                        <h4 class="fw-bold text-dark mb-1" style="font-size: 1.4rem; letter-spacing: -0.01em;">{{ $material->title }}</h4>
+                        <div class="d-flex align-items-center gap-2 text-secondary" style="font-size: 0.78rem;">
+                            <span>Oleh: <strong>{{ $course->teacher_name }}</strong></span>
+                            <span>·</span>
+                            <span>Diunggah {{ $material->created_at->isoFormat('D MMMM YYYY, HH:mm') }}</span>
+                        </div>
                     </div>
                 </div>
+                @if($userRole === 'teacher')
+                    <form action="{{ route('materials.delete', [$course->id, $material->id]) }}" method="POST" class="mt-3 mt-md-0">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="btn btn-sm btn-outline-danger rounded-3 px-3 fw-semibold" style="font-size: 0.78rem;">
+                            <i class="bi bi-trash me-1"></i> Hapus Materi
+                        </button>
+                    </form>
+                @endif
             </div>
 
             {{-- Description --}}
@@ -101,33 +125,43 @@
             @endif
         </div>
 
-        {{-- ======= COMMENT SECTION ======= --}}
+{{-- ======= COMMENT SECTION ======= --}}
         <div class="card border-0 shadow-sm rounded-4 bg-white p-4 p-md-5" id="comments">
             <h6 class="fw-bold text-dark mb-4 d-flex align-items-center gap-2" style="font-size: 1rem;">
                 <i class="bi bi-chat-dots-fill" style="color: {{ $course->color }};"></i>
-                Komentar &amp; Pertanyaan
+                Komentar &amp; Jawaban
                 <span class="badge rounded-pill fw-semibold ms-1" style="background-color: {{ $course->color }}15; color: {{ $course->color }}; font-size: 0.72rem;">
-                    {{ $material->comments->count() }}
+                    {{ $materialComments->count() }}
                 </span>
             </h6>
 
-            {{-- Comment Form --}}
+            {{-- Comment / Answer Form --}}
             <form action="{{ route('comments.store', [$course->id, 'materials', $material->id]) }}" method="POST" class="mb-4">
                 @csrf
+                <input type="hidden" name="reply_to" id="replyToInput" value="">
+                <div id="replyContext" class="d-none mb-3 rounded-3 p-3" style="background-color: #f8fafc; border: 1px solid #cbd5e1;">
+                    <div class="d-flex align-items-center justify-content-between gap-3">
+                        <div class="text-secondary small">Membalas komentar <span id="replyTargetName" class="fw-semibold text-dark"></span></div>
+                        <button type="button" class="btn btn-sm btn-light btn-outline-secondary rounded-3" onclick="cancelReply()">Batal</button>
+                    </div>
+                </div>
                 <div class="d-flex gap-3 align-items-start">
                     <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold flex-shrink-0"
                          style="width: 38px; height: 38px; font-size: 0.8rem; background-color: {{ $course->color }};">
-                        {{ strtoupper(substr(Auth::user()->name, 0, 2)) }}
+                        {{ strtoupper(substr(optional(auth()->user())->name ?? 'U', 0, 2)) }}
                     </div>
                     <div class="flex-grow-1">
-                        <div class="comment-input-wrapper position-relative">
-                            <textarea class="form-control comment-textarea" name="body" rows="2"
-                                      placeholder="Tulis pertanyaan atau komentar tentang materi ini..."
-                                      style="border-radius: 12px; border: 1px solid #e2e8f0; font-size: 0.88rem; padding: 0.7rem 1rem; resize: none; font-family: var(--font-sans); transition: border-color 0.2s, box-shadow 0.2s;"
-                                      onfocus="this.style.borderColor='{{ $course->color }}'; this.style.boxShadow='0 0 0 3px {{ $course->color }}20';"
-                                      onblur="this.style.borderColor='#e2e8f0'; this.style.boxShadow='none';" required></textarea>
-                        </div>
-                        <div class="d-flex justify-content-end mt-2">
+                        <textarea class="form-control" name="body" rows="2"
+                                  placeholder="{{ $userRole === 'teacher' ? 'Tulis balasan atau klarifikasi untuk materi ini...' : 'Tulis pertanyaan atau komentar singkat terkait materi ini...' }}"
+                                  style="border-radius: 12px; border: 1px solid #e2e8f0; font-size: 0.88rem; padding: 0.7rem 1rem; resize: none; font-family: var(--font-sans); transition: border-color 0.2s, box-shadow 0.2s; outline: none;"
+                                  onfocus="this.style.borderColor='{{ $course->color }}'; this.style.boxShadow='0 0 0 3px {{ $course->color }}20';"
+                                  onblur="this.style.borderColor='#e2e8f0'; this.style.boxShadow='none';" required></textarea>
+                        <div class="d-flex justify-content-between align-items-center mt-2">
+                            <span class="text-secondary" style="font-size: 0.72rem;">
+                                @if($userRole !== 'teacher')
+                                    <i class="bi bi-info-circle me-1"></i> Gunakan kotak komentar ini untuk bertanya atau memberi catatan tentang materi.
+                                @endif
+                            </span>
                             <button type="submit" class="btn btn-sm text-white px-4 py-2 rounded-3 fw-semibold"
                                     style="background-color: {{ $course->color }}; border: none; font-size: 0.82rem;">
                                 <i class="bi bi-send me-1"></i> Kirim
@@ -139,24 +173,44 @@
 
             {{-- Comments List --}}
             <div class="d-flex flex-column gap-3">
-                @forelse($material->comments as $comment)
+                @php
+                    $commentsById = $materialComments->keyBy('id');
+                @endphp
+                @forelse($materialComments as $comment)
+                    @php
+                        $commentAuthorName = data_get($comment, 'user.name') ?: data_get($comment, 'name') ?: ($comment->user_id ? ($commentUserNames[$comment->user_id] ?? 'Pengguna') : 'Pengguna');
+                        $commentInitials = strtoupper(substr($commentAuthorName, 0, 2));
+                    @endphp
                     <div class="d-flex gap-3 align-items-start comment-item">
                         <div class="rounded-circle d-flex align-items-center justify-content-center fw-bold flex-shrink-0"
                              style="width: 36px; height: 36px; font-size: 0.75rem;
                                     background-color: {{ $comment->user_id === $course->creator_id ? $course->color : '#f1f5f9' }};
                                     color: {{ $comment->user_id === $course->creator_id ? '#fff' : '#475569' }};">
-                            {{ strtoupper(substr($comment->user->name, 0, 2)) }}
+                                    {{ $commentInitials }}
                         </div>
                         <div class="flex-grow-1">
                             <div class="p-3 rounded-4" style="background-color: #f8fafc; border: 1px solid #e2e8f0;">
                                 <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
-                                    <span class="fw-bold text-dark" style="font-size: 0.85rem;">{{ $comment->user->name }}</span>
+                                    <span class="fw-bold text-dark" style="font-size: 0.85rem;">{{ $commentAuthorName }}</span>
                                     @if($comment->user_id === $course->creator_id)
                                         <span class="badge rounded-pill" style="background-color: {{ $course->color }}15; color: {{ $course->color }}; font-size: 0.68rem; font-weight: 600;">Pengajar</span>
                                     @endif
-                                    <span class="text-secondary" style="font-size: 0.73rem;">{{ $comment->created_at->diffForHumans() }}</span>
+                                    <span class="text-secondary" style="font-size: 0.73rem;">{{ isset($comment->created_at) ? \Carbon\Carbon::parse($comment->created_at)->diffForHumans() : '' }}</span>
                                 </div>
-                                <p class="text-dark mb-0" style="font-size: 0.88rem; line-height: 1.6; white-space: pre-line;">{{ $comment->body }}</p>
+                                @if(!empty($comment->reply_to) && isset($commentsById[$comment->reply_to]))
+                                    @php
+                                        $replyTargetName = data_get($commentsById[$comment->reply_to], 'user.name') ?: data_get($commentsById[$comment->reply_to], 'name') ?: 'Komentar';
+                                    @endphp
+                                    <div class="mb-2 rounded-3 py-2 px-3" style="background-color: rgba(15, 23, 42, 0.04); border: 1px solid #e2e8f0;">
+                                        <span class="text-secondary small">Balasan untuk <strong>{{ $replyTargetName }}</strong></span>
+                                    </div>
+                                @endif
+                                <p class="text-dark mb-0" style="font-size: 0.88rem; line-height: 1.6; white-space: pre-line;">{{ $comment->body ?? '' }}</p>
+                                <div class="mt-3 d-flex justify-content-end">
+                                    <button type="button" class="btn btn-sm btn-link text-secondary" onclick="setReply({{ $comment->id }}, '{{ addslashes($commentAuthorName) }}')">
+                                        <i class="bi bi-reply"></i> Balas
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -165,7 +219,7 @@
                         <div class="rounded-circle bg-light d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 56px; height: 56px;">
                             <i class="bi bi-chat-square text-secondary fs-4"></i>
                         </div>
-                        <p class="text-secondary small mb-0">Belum ada komentar. Jadilah yang pertama bertanya!</p>
+                        <p class="text-secondary small mb-0">Belum ada komentar. Silakan ajukan pertanyaan jika ada yang kurang jelas.</p>
                     </div>
                 @endforelse
             </div>
@@ -239,5 +293,20 @@
     to { opacity: 1; transform: translateY(0); }
 }
 </style>
+
+<script>
+function setReply(commentId, commenterName) {
+    document.getElementById('replyToInput').value = commentId;
+    document.getElementById('replyTargetName').innerText = commenterName;
+    document.getElementById('replyContext').classList.remove('d-none');
+    document.getElementById('replyContext').classList.add('d-flex');
+    document.querySelector('textarea[name="body"]').focus();
+}
+function cancelReply() {
+    document.getElementById('replyToInput').value = '';
+    document.getElementById('replyContext').classList.add('d-none');
+    document.getElementById('replyContext').classList.remove('d-flex');
+}
+</script>
 
 @endsection

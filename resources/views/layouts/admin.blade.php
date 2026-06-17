@@ -30,7 +30,6 @@
             <li><a href="{{ route('admin.users') }}" class="sidebar-link {{ request()->routeIs('admin.users') ? 'active' : '' }}"><i class="bi bi-people-fill"></i> Kelola Pengguna</a></li>
             <li><a href="{{ route('admin.courses') }}" class="sidebar-link {{ request()->routeIs('admin.courses') ? 'active' : '' }}"><i class="bi bi-journal-text"></i> Kelola Kelas</a></li>
             <li class="my-3 border-top border-secondary opacity-25"></li>
-            <li><a href="{{ route('dashboard') }}" class="sidebar-link"><i class="bi bi-arrow-left-circle"></i> Kembali Ke LMS</a></li>
         </ul>
     </div>
     <div class="sidebar-footer">
@@ -63,7 +62,6 @@
                 <li><a href="{{ route('admin.users') }}" class="sidebar-link {{ request()->routeIs('admin.users') ? 'active' : '' }}"><i class="bi bi-people-fill"></i> Kelola Pengguna</a></li>
                 <li><a href="{{ route('admin.courses') }}" class="sidebar-link {{ request()->routeIs('admin.courses') ? 'active' : '' }}"><i class="bi bi-journal-text"></i> Kelola Kelas</a></li>
                 <li class="my-3 border-top border-secondary opacity-25"></li>
-                <li><a href="{{ route('dashboard') }}" class="sidebar-link"><i class="bi bi-arrow-left-circle"></i> Kembali Ke LMS</a></li>
             </ul>
         </div>
         <div style="padding: 1.25rem; border-top: 1px solid #e2e8f0;">
@@ -95,7 +93,16 @@
 
         <!-- Right: action buttons + avatar -->
         <div class="header-right">
-            <button class="header-icon-btn" title="Notifikasi"><i class="bi bi-bell"></i></button>
+            <div class="d-flex align-items-center gap-2 d-none d-md-flex me-2">
+                <button type="button" class="header-icon-btn" id="darkModeBtn" title="Toggle tema gelap">
+                    <i class="bi bi-moon-stars-fill"></i>
+                </button>
+                <div class="form-check form-switch mb-0">
+                    <input class="form-check-input" type="checkbox" id="darkModeToggle"
+                           role="switch" style="width: 2.5em; height: 1.35em; cursor: pointer;"
+                           onchange="lmsToggleDark(this.checked)">
+                </div>
+            </div>
             <a href="{{ route('settings') }}">
                 <div class="d-flex align-items-center justify-content-center bg-danger text-white fw-bold"
                      style="border-radius: 50%; width: 36px; height: 36px; font-size: 0.82rem; flex-shrink: 0;">

@@ -80,17 +80,19 @@
                             <tr style="font-size: 0.85rem;">
                                 <td>
                                     <div class="d-flex align-items-center gap-2">
-                                        <div class="rounded-2 d-flex align-items-center justify-content-center text-white fw-bold" style="width: 32px; height: 32px; background-color: {{ $course->color }};">
-                                            <i class="bi {{ $course->icon ?: 'bi-journal' }}"></i>
+                                        <div class="rounded-2 d-flex align-items-center justify-content-center text-white fw-bold" style="width: 32px; height: 32px; background-color: {{ $course->color ?: '#1F7A8C' }};">
+                                            <i class="bi {{ $course->icon ?: 'bi-journal-text' }}"></i>
                                         </div>
                                         <div>
                                             <div class="fw-semibold text-dark">{{ $course->name }}</div>
-                                            <div class="text-secondary small">{{ $course->subject }}</div>
+                                            <div class="text-secondary small">{{ $course->subject ?: 'Umum' }}</div>
                                         </div>
                                     </div>
                                 </td>
                                 <td><code class="bg-light px-2 py-1 rounded text-dark">{{ $course->code }}</code></td>
-                                <td class="text-secondary">{{ $course->teacher_name }}</td>
+                                <td class="text-secondary">
+                                    {{ $course->teacher->name ?? ($course->teacher_name ?? 'Belum Ada Pengajar') }}
+                                </td>
                             </tr>
                             @empty
                             <tr>

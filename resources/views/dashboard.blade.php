@@ -19,10 +19,10 @@
     <div class="d-flex align-items-center gap-3">
         <div class="d-flex align-items-center justify-content-center bg-primary text-white fw-bold rounded-3"
              style="width: 68px; height: 68px; font-size: 1.5rem; flex-shrink: 0;">
-            {{ strtoupper(substr(Auth::user()->name, 0, 2)) }}
+            {{ strtoupper(substr(auth()->user()->name, 0, 2)) }}
         </div>
-        <h4 class="fw-bold mb-0" style="font-size: 1.35rem; color: #0f172a;">
-            Selamat Datang, {{ Auth::user()->name }}
+        <h4 class="fw-bold mb-0" style="font-size: 1.35rem;">
+            Selamat Datang, {{ auth()->user()->name }}
         </h4>
     </div>
 </div>
@@ -65,7 +65,7 @@
                 </div>
                 <span class="badge rounded-pill" style="background-color: #ceeaf0; color: #1F7A8C; font-size: 0.75rem; font-weight: 600;">Baik</span>
             </div>
-            <div class="fw-bold fs-4 text-dark">85</div>
+            <div class="fw-bold fs-4 text-dark">{{ $averageGrade ?? '-' }}</div>
             <div class="text-secondary small">Rata-rata Nilai</div>
         </div>
     </div>

@@ -23,14 +23,14 @@
                 </div>
                 <span class="fw-bold" style="color: #1F7A8C; font-size: 1.1rem; line-height: 1.2;">Mini LMS</span>
             </a>
-            <span class="text-secondary" style="font-size: 0.75rem; padding-left: 46px;">Academic Portal</span>
+            <span class="text-secondary" style="font-size: 0.75rem; padding-left: 46px;">Tiga Serangkai University</span>
         </div>
         <ul class="sidebar-menu-list">
             <li><a href="{{ route('dashboard') }}" class="sidebar-link {{ request()->routeIs('dashboard') ? 'active' : '' }}"><i class="bi bi-grid-1x2"></i> Dashboard</a></li>
-            <li><a href="{{ route('courses') }}" class="sidebar-link {{ request()->routeIs('courses') ? 'active' : '' }}"><i class="bi bi-journal-bookmark"></i> My Courses</a></li>
-            <li><a href="{{ route('tasks') }}" class="sidebar-link {{ request()->routeIs('tasks') ? 'active' : '' }}"><i class="bi bi-calendar-event"></i> Classwork</a></li>
-            <li><a href="{{ route('report') }}" class="sidebar-link {{ request()->routeIs('report') ? 'active' : '' }}"><i class="bi bi-file-earmark-bar-graph"></i> Report</a></li>
-            <li><a href="{{ route('settings') }}" class="sidebar-link {{ request()->routeIs('settings') ? 'active' : '' }}"><i class="bi bi-gear"></i> Settings</a></li>
+            <li><a href="{{ route('courses') }}" class="sidebar-link {{ request()->routeIs('courses') ? 'active' : '' }}"><i class="bi bi-journal-bookmark"></i> Kelas Saya</a></li>
+            <li><a href="{{ route('tasks') }}" class="sidebar-link {{ request()->routeIs('tasks') ? 'active' : '' }}"><i class="bi bi-calendar-event"></i> Tugas</a></li>
+            <li><a href="{{ route('report') }}" class="sidebar-link {{ request()->routeIs('report') ? 'active' : '' }}"><i class="bi bi-file-earmark-bar-graph"></i> Nilai</a></li>
+            <li><a href="{{ route('settings') }}" class="sidebar-link {{ request()->routeIs('settings') ? 'active' : '' }}"><i class="bi bi-gear"></i> Pengaturan</a></li>
             @if(Auth::check() && Auth::user()->isAdmin())
             <li style="margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid #e2e8f0;">
                 <a href="{{ route('admin.dashboard') }}" class="sidebar-link {{ request()->routeIs('admin.*') ? 'active' : '' }}" style="color: #7c3aed;">
@@ -67,10 +67,10 @@
             <!-- Nav Links -->
             <ul class="sidebar-menu-list mt-2">
                 <li><a href="{{ route('dashboard') }}" class="sidebar-link {{ request()->routeIs('dashboard') ? 'active' : '' }}"><i class="bi bi-grid-1x2"></i> Dashboard</a></li>
-                <li><a href="{{ route('courses') }}" class="sidebar-link {{ request()->routeIs('courses') ? 'active' : '' }}"><i class="bi bi-journal-bookmark"></i> My Courses</a></li>
-                <li><a href="{{ route('tasks') }}" class="sidebar-link {{ request()->routeIs('tasks') ? 'active' : '' }}"><i class="bi bi-calendar-event"></i> Classwork</a></li>
-                <li><a href="{{ route('report') }}" class="sidebar-link {{ request()->routeIs('report') ? 'active' : '' }}"><i class="bi bi-file-earmark-bar-graph"></i> Report</a></li>
-                <li><a href="{{ route('settings') }}" class="sidebar-link {{ request()->routeIs('settings') ? 'active' : '' }}"><i class="bi bi-gear"></i> Settings</a></li>
+                <li><a href="{{ route('courses') }}" class="sidebar-link {{ request()->routeIs('courses') ? 'active' : '' }}"><i class="bi bi-journal-bookmark"></i> Kelas Saya</a></li>
+                <li><a href="{{ route('tasks') }}" class="sidebar-link {{ request()->routeIs('tasks') ? 'active' : '' }}"><i class="bi bi-calendar-event"></i> Tugas</a></li>
+                <li><a href="{{ route('report') }}" class="sidebar-link {{ request()->routeIs('report') ? 'active' : '' }}"><i class="bi bi-file-earmark-bar-graph"></i> Nilai</a></li>
+                <li><a href="{{ route('settings') }}" class="sidebar-link {{ request()->routeIs('settings') ? 'active' : '' }}"><i class="bi bi-gear"></i> Pengaturan</a></li>
                 @if(Auth::check() && Auth::user()->isAdmin())
                 <li style="margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid #e2e8f0;">
                     <a href="{{ route('admin.dashboard') }}" class="sidebar-link {{ request()->routeIs('admin.*') ? 'active' : '' }}" style="color: #7c3aed;">
@@ -106,14 +106,23 @@
             </button>
             <a href="{{ route('dashboard') }}" class="header-brand-title">Mini LMS</a>
             <!-- Nav links hidden on mobile -->
-            <a href="{{ route('tasks') }}" class="header-nav-link d-none d-md-inline {{ request()->routeIs('tasks') ? 'fw-semibold text-dark' : '' }}">Classwork</a>
-            <a href="{{ route('report') }}" class="header-nav-link d-none d-md-inline {{ request()->routeIs('report') ? 'fw-semibold text-dark' : '' }}">Report</a>
+            <a href="{{ route('tasks') }}" class="header-nav-link d-none d-md-inline {{ request()->routeIs('tasks') ? 'fw-semibold text-dark' : '' }}">Tugas</a>
+            <a href="{{ route('report') }}" class="header-nav-link d-none d-md-inline {{ request()->routeIs('report') ? 'fw-semibold text-dark' : '' }}">Nilai</a>
         </div>
 
         <!-- Right: action buttons + avatar -->
         <div class="header-right">
-            <button class="header-icon-btn" title="Notifikasi"><i class="bi bi-bell"></i></button>
-            <button class="header-icon-btn d-none d-sm-inline" title="Bantuan"><i class="bi bi-question-circle"></i></button>
+            <!-- Dark Mode Toggle -->
+            <div class="d-flex align-items-center gap-2 d-none d-md-flex">
+                <button type="button" class="header-icon-btn" id="darkModeBtn" title="Toggle tema gelap">
+                    <i class="bi bi-moon-stars-fill"></i>
+                </button>
+                <div class="form-check form-switch mb-0">
+                    <input class="form-check-input" type="checkbox" id="darkModeToggle"
+                           role="switch" style="width: 2.5em; height: 1.35em; cursor: pointer;"
+                           onchange="lmsToggleDark(this.checked)">
+                </div>
+            </div>
             <!-- Buttons hidden on small mobile to save space -->
             <button type="button" class="btn btn-gabung-kelas d-none d-sm-inline-block" data-bs-toggle="modal" data-bs-target="#modalGabungKelas">Gabung Kelas</button>
             <button type="button" class="btn btn-bikin-kelas d-none d-sm-inline-block" data-bs-toggle="modal" data-bs-target="#modalBikinKelas">Buat Kelas</button>
@@ -187,7 +196,6 @@
     </div>
 </div>
 
-<!-- ===== MODAL: BIKIN KELAS ===== -->
 <div class="modal fade" id="modalBikinKelas" tabindex="-1" aria-labelledby="modalBikinKelasLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" style="max-width: 480px;">
         <div class="modal-content border-0 shadow-lg" style="border-radius: 16px; overflow: hidden;">
@@ -204,21 +212,22 @@
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form action="{{ route('courses.create') }}" method="POST">
+            
+            <form action="{{ route('courses.store') }}" method="POST">
                 @csrf
                 <div class="modal-body px-4 pt-3 pb-2">
                     <div class="mb-3">
                         <label class="form-label-custom">Nama Kelas <span class="text-danger">*</span></label>
                         <div class="input-group-custom">
                             <span class="input-group-icon"><i class="bi bi-journal-bookmark"></i></span>
-                            <input type="text" class="form-control-custom" id="namaKelas" name="nama_kelas" placeholder="Contoh: Matematika Kelas 10A" required>
+                            <input type="text" class="form-control-custom" id="namaKelas" name="name" placeholder="Contoh: Matematika Kelas 10A" required>
                         </div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label-custom">Mata Pelajaran</label>
                         <div class="input-group-custom">
                             <span class="input-group-icon"><i class="bi bi-book"></i></span>
-                            <input type="text" class="form-control-custom" id="mataPelajaran" name="mata_pelajaran" placeholder="Contoh: Matematika">
+                            <input type="text" class="form-control-custom" id="mataPelajaran" name="subject" placeholder="Contoh: Matematika">
                         </div>
                     </div>
                     <div class="row g-3 mb-3">
@@ -226,7 +235,7 @@
                             <label class="form-label-custom">Ruang / Kelas</label>
                             <div class="input-group-custom">
                                 <span class="input-group-icon"><i class="bi bi-building"></i></span>
-                                <input type="text" class="form-control-custom" name="ruang" placeholder="Contoh: 10A">
+                                <input type="text" class="form-control-custom" name="room" placeholder="Contoh: 10A">
                             </div>
                         </div>
                         <div class="col-6">
@@ -240,7 +249,6 @@
                     <div class="mb-1">
                         <label class="form-label-custom d-block mb-2">Warna Tema Kelas</label>
                         <div class="d-flex gap-2 flex-wrap">
-                            <!-- Swatches -->
                             <label class="color-swatch-label" title="#1F7A8C">
                                 <input type="radio" name="warna_tema" value="#1F7A8C" style="display:none;" checked>
                                 <span class="color-swatch selected"
@@ -343,8 +351,27 @@ document.addEventListener('DOMContentLoaded', function() {
     document.documentElement.setAttribute('data-theme', saved);
     const toggle = document.getElementById('darkModeToggle');
     if (toggle) toggle.checked = (saved === 'dark');
+    
+    // Update dark mode button icon
+    const darkModeBtn = document.getElementById('darkModeBtn');
+    if (darkModeBtn) {
+        const updateIcon = () => {
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            const icon = darkModeBtn.querySelector('i');
+            if (isDark) {
+                icon.classList.remove('bi-moon-stars-fill');
+                icon.classList.add('bi-sun-fill');
+            } else {
+                icon.classList.remove('bi-sun-fill');
+                icon.classList.add('bi-moon-stars-fill');
+            }
+        };
+        updateIcon();
+        const observer = new MutationObserver(updateIcon);
+        observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    }
 });
 </script>
-
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

@@ -58,6 +58,23 @@
                     <button type="button" class="btn-toggle-password" tabindex="-1" style="background: none; border: none; padding: 0 1rem; color: #94a3b8; cursor: pointer; display: flex; align-items: center; outline: none; box-shadow: none;">
                         <i class="bi bi-eye"></i>
                     </button>
+                    <script>document.querySelectorAll('.btn-toggle-password').forEach(button => {
+    button.addEventListener('click', function() {
+        // Ambil element input password yang satu grup dengan tombol mata ini
+        const passwordInput = this.previousElementSibling;
+        const icon = this.querySelector('i');
+        
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            icon.classList.remove('bi-eye');
+            icon.classList.add('bi-eye-slash');
+        } else {
+            passwordInput.type = 'password';
+            icon.classList.remove('bi-eye-slash');
+            icon.classList.add('bi-eye');
+        }
+    });
+});</script>
                     <span class="d-none"><i class="bi bi-eye-slash"></i></span>
                 </div>
             </div>
