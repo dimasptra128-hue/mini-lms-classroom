@@ -23,7 +23,7 @@
 </div>
 
 {{-- Task Detail Content --}}
-<div class="row g-4">
+<div class="row g-4 task-details-page">
 @php
     // Normalize comments to a Collection of objects. Support DB relation, JSON attribute, or null.
     $commentsRaw = null;
@@ -69,13 +69,18 @@
                     <div class="fw-semibold text-danger" style="font-size: 0.88rem;">Tenggat: {{ $task->due_date }}</div>
                     <span class="text-secondary small">100 Poin</span>
                     @if($userRole === 'teacher')
-                        <form action="{{ route('tasks.delete', [$course->id, $task->id]) }}" method="POST" class="mt-3">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="btn btn-sm btn-outline-danger rounded-3 px-3 fw-semibold" style="font-size: 0.78rem;">
-                                <i class="bi bi-trash me-1"></i> Hapus Tugas
-                            </button>
-                        </form>
+                        <div class="d-flex gap-2 mt-3">
+                            <a href="{{ route('tasks.showSubmissions', [$course->id, $task->id]) }}" class="btn btn-sm btn-outline-primary rounded-3 px-3 fw-semibold" style="font-size: 0.78rem;">
+                                <i class="bi bi-file-earmark-check me-1"></i> Kelola Penilaian
+                            </a>
+                            <form action="{{ route('tasks.delete', [$course->id, $task->id]) }}" method="POST" class="d-inline">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-sm btn-outline-danger rounded-3 px-3 fw-semibold" style="font-size: 0.78rem;">
+                                    <i class="bi bi-trash me-1"></i> Hapus Tugas
+                                </button>
+                            </form>
+                        </div>
                     @endif
                 </div>
             </div>
@@ -130,7 +135,7 @@
             <form action="{{ route('comments.store', [$course->id, 'tasks', $task->id]) }}" method="POST" class="mb-4">
                 @csrf
                 <input type="hidden" name="reply_to" id="replyToInput" value="">
-                <div id="replyContext" class="d-none mb-3 rounded-3 p-3" style="background-color: #f8fafc; border: 1px solid #cbd5e1;">
+                <div id="replyContext" class="d-none mb-3 rounded-3 p-3 reply-context-box">
                     <div class="d-flex align-items-center justify-content-between gap-3">
                         <div class="text-secondary small">Membalas komentar <span id="replyTargetName" class="fw-semibold text-dark"></span></div>
                         <button type="button" class="btn btn-sm btn-light btn-outline-secondary rounded-3" onclick="cancelReply()">Batal</button>
@@ -169,14 +174,12 @@
                 @endphp
                 @forelse($comments as $comment)
                     <div class="d-flex gap-3 align-items-start comment-item">
-                        <div class="rounded-circle d-flex align-items-center justify-content-center fw-bold flex-shrink-0"
-                             style="width: 36px; height: 36px; font-size: 0.75rem;
-                                    background-color: {{ $comment->user_id === $course->creator_id ? $course->color : '#f1f5f9' }};
-                                    color: {{ $comment->user_id === $course->creator_id ? '#fff' : '#475569' }};">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center fw-bold flex-shrink-0 {{ $comment->user_id === $course->creator_id ? 'creator-avatar' : 'comment-avatar-alt' }}"
+                             style="width: 36px; height: 36px; font-size: 0.75rem; @if($comment->user_id === $course->creator_id) background-color: {{ $course->color }}; color: #fff; @endif">
                                     {{ strtoupper(substr(optional($comment->user)->name ?? ($comment->name ?? 'U'), 0, 2)) }}
                         </div>
                         <div class="flex-grow-1">
-                            <div class="p-3 rounded-4" style="background-color: #f8fafc; border: 1px solid #e2e8f0;">
+                            <div class="p-3 rounded-4 comment-bubble">
                                 <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
                                     <span class="fw-bold text-dark" style="font-size: 0.85rem;">{{ optional($comment->user)->name ?? ($comment->name ?? 'Pengguna') }}</span>
                                     @if($comment->user_id === $course->creator_id)
@@ -185,11 +188,11 @@
                                     <span class="text-secondary" style="font-size: 0.73rem;">{{ isset($comment->created_at) ? \Carbon\Carbon::parse($comment->created_at)->diffForHumans() : '' }}</span>
                                 </div>
                                 @if(!empty($comment->reply_to) && isset($commentsById[$comment->reply_to]))
-                                    <div class="mb-2 rounded-3 py-2 px-3" style="background-color: rgba(15, 23, 42, 0.04); border: 1px solid #e2e8f0;">
+                                    <div class="mb-2 rounded-3 py-2 px-3 comment-reply-indicator">
                                         <span class="text-secondary small">Balasan untuk <strong>{{ optional($commentsById[$comment->reply_to]->user)->name ?? ($commentsById[$comment->reply_to]->name ?? 'Komentar') }}</strong></span>
                                     </div>
                                 @endif
-                                <p class="text-dark mb-0" style="font-size: 0.88rem; line-height: 1.6; white-space: pre-line;">{{ $comment->body ?? '' }}</p>
+                                <p class="text-dark mb-0 comment-body" style="font-size: 0.88rem; line-height: 1.6; white-space: pre-line;">{{ $comment->body ?? '' }}</p>
                                 <div class="mt-3 d-flex justify-content-end">
                                     <button type="button" class="btn btn-sm btn-link text-secondary" onclick="setReply({{ $comment->id }}, '{{ addslashes(optional($comment->user)->name ?? ($comment->name ?? 'Pengguna')) }}')">
                                         <i class="bi bi-reply"></i> Balas
@@ -242,7 +245,44 @@
                             <a href="{{ asset('storage/' . data_get($userSubmission,'file_path')) }}" download class="btn btn-sm btn-outline-secondary w-100 rounded-3 small mb-2">Unduh Kiriman</a>
                         </div>
                     @endif
-                    <form action="{{ route('tasks.cancelSubmission', [$course->id, $task->id]) }}" method="POST">
+
+                    {{-- Score Display --}}
+                    @php
+                        $score = data_get($userSubmission, 'score');
+                        $feedback = data_get($userSubmission, 'feedback');
+                    @endphp
+                    @if($score !== null)
+                        <div class="border-top pt-3 mt-3">
+                            <div class="mb-3">
+                                <span class="text-secondary" style="font-size: 0.75rem;">Nilai dari Guru</span>
+                                <div class="d-flex align-items-center justify-content-center gap-2 mt-2">
+                                    <span class="fw-bold" style="font-size: 1.8rem; color: {{ $score >= 80 ? '#16a34a' : ($score >= 70 ? '#b45309' : '#dc2626') }};">
+                                        {{ $score }}
+                                    </span>
+                                    <span class="badge rounded-pill py-2" 
+                                          style="background-color: {{ $score >= 90 ? '#dcfce7; color: #16a34a' : ($score >= 80 ? '#fef3c7; color: #b45309' : '#fee2e2; color: #dc2626') }}; font-size: 0.8rem; font-weight: 600;">
+                                        Grade {{ $score >= 90 ? 'A' : ($score >= 80 ? 'B' : ($score >= 70 ? 'C' : ($score >= 60 ? 'D' : 'E'))) }}
+                                    </span>
+                                </div>
+                            </div>
+                            @if($feedback)
+                                <div class="rounded-3 p-3 mb-0 feedback-box">
+                                    <div class="text-secondary" style="font-size: 0.75rem; font-weight: 600; margin-bottom: 0.5rem;">
+                                        <i class="bi bi-chat-dots me-1"></i> Catatan dari Guru
+                                    </div>
+                                    <p class="text-dark small mb-0" style="font-size: 0.85rem; white-space: pre-wrap;">{{ $feedback }}</p>
+                                </div>
+                            @endif
+                        </div>
+                    @else
+                        <div class="border-top pt-3 mt-3">
+                            <p class="text-secondary small mb-0">
+                                <i class="bi bi-hourglass-split me-1"></i> Menunggu penilaian dari guru
+                            </p>
+                        </div>
+                    @endif
+
+                    <form action="{{ route('tasks.cancelSubmission', [$course->id, $task->id]) }}" method="POST" class="mt-3">
                         @csrf
                         @method('DELETE')
                         <button type="submit" class="btn btn-outline-secondary w-100 rounded-3 small" style="font-size: 0.85rem; font-weight: 600;">Batalkan Pengiriman</button>
@@ -253,9 +293,9 @@
                     <form id="submitForm" action="{{ route('tasks.submit', [$course->id, $task->id]) }}" method="POST" enctype="multipart/form-data">
                         @csrf
                         <div class="mb-3">
-                            <div class="p-3 border rounded-3 text-center bg-light bg-opacity-30 cursor-pointer" 
+                            <div class="p-3 border rounded-3 text-center bg-light bg-opacity-30 cursor-pointer file-input-box" 
                                  onclick="document.getElementById('taskSubmitFile').click()"
-                                 style="border-style: dashed !important; border-color: #cbd5e1 !important;">
+                                 style="border-style: dashed !important;">
                                 <i class="bi bi-plus-lg fs-5 text-secondary d-block mb-1"></i>
                                 <span class="small fw-semibold text-secondary">Tambah atau buat file jawaban</span>
                                 <input type="file" id="taskSubmitFile" name="submission_file" style="display:none;" onchange="fileSelected(this)">
@@ -369,5 +409,120 @@ function cancelReply() {
     document.getElementById('replyContext').classList.remove('d-flex');
 }
 </script>
+
+<style>
+.reply-context-box {
+    background-color: #f8fafc;
+    border: 1px solid #cbd5e1;
+}
+
+.comment-bubble {
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+}
+
+.comment-reply-indicator {
+    background-color: rgba(15, 23, 42, 0.04);
+    border: 1px solid #e2e8f0;
+}
+
+.file-input-box {
+    border-color: #cbd5e1 !important;
+    background-color: #f8fafc;
+}
+
+.comment-avatar-alt {
+    color: #475569;
+}
+
+[data-theme="dark"] .task-details-page .reply-context-box,
+[data-theme="dark"] .task-details-page .comment-bubble,
+[data-theme="dark"] .task-details-page .comment-reply-indicator,
+[data-theme="dark"] .task-details-page .file-input-box,
+[data-theme="dark"] .task-details-page .feedback-box,
+[data-theme="dark"] .task-details-page .bg-light,
+[data-theme="dark"] .task-details-page .bg-light.bg-opacity-30,
+[data-theme="dark"] .task-details-page .bg-white,
+[data-theme="dark"] .task-details-page .card.bg-white,
+[data-theme="dark"] .task-details-page .rounded-circle.bg-success.bg-opacity-10,
+[data-theme="dark"] .task-details-page .rounded-circle.bg-light {
+    background-color: var(--dm-surface-2) !important;
+    border-color: var(--dm-border) !important;
+}
+
+[data-theme="dark"] .task-details-page .reply-context-box .text-secondary,
+[data-theme="dark"] .task-details-page .comment-bubble .text-secondary,
+[data-theme="dark"] .task-details-page .comment-reply-indicator .text-secondary,
+[data-theme="dark"] .task-details-page .file-input-box .text-secondary,
+[data-theme="dark"] .task-details-page .feedback-box .text-secondary,
+[data-theme="dark"] .task-details-page .comment-bubble .text-dark,
+[data-theme="dark"] .task-details-page .reply-context-box .text-dark,
+[data-theme="dark"] .task-details-page .comment-reply-indicator .text-dark,
+[data-theme="dark"] .task-details-page .file-input-box .text-dark,
+[data-theme="dark"] .task-details-page .feedback-box .text-dark,
+[data-theme="dark"] .task-details-page .text-dark,
+[data-theme="dark"] .task-details-page .text-secondary {
+    color: var(--dm-text) !important;
+}
+
+[data-theme="dark"] .comment-avatar-alt,
+[data-theme="dark"] .creator-avatar {
+    color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .task-details-page .creator-avatar {
+    color: #ffffff !important;
+}
+
+[data-theme="dark"] .task-details-page .comment-avatar-alt {
+    background-color: #334155 !important;
+    color: #cbd5e1 !important;
+    border-color: var(--dm-border) !important;
+}
+
+[data-theme="dark"] .task-details-page .comment-body,
+[data-theme="dark"] .task-details-page .feedback-box p,
+[data-theme="dark"] .task-details-page .comment-reply-indicator,
+[data-theme="dark"] .task-details-page .file-input-box,
+[data-theme="dark"] .task-details-page .file-input-box:hover,
+[data-theme="dark"] .task-details-page .file-input-box .text-secondary,
+[data-theme="dark"] .task-details-page .d-flex.bg-light,
+[data-theme="dark"] .task-details-page .d-flex.bg-light .text-secondary,
+[data-theme="dark"] .task-details-page .card.border-0.shadow-sm.rounded-4 {
+    background-color: var(--dm-surface-2) !important;
+    border-color: var(--dm-border) !important;
+}
+
+[data-theme="dark"] .task-details-page .reply-context-box,
+[data-theme="dark"] .task-details-page .comment-bubble,
+[data-theme="dark"] .task-details-page .comment-reply-indicator,
+[data-theme="dark"] .task-details-page .file-input-box,
+[data-theme="dark"] .task-details-page .feedback-box,
+[data-theme="dark"] .task-details-page .bg-light,
+[data-theme="dark"] .task-details-page .bg-light.bg-opacity-30,
+[data-theme="dark"] .task-details-page .bg-white,
+[data-theme="dark"] .task-details-page .card.bg-white,
+[data-theme="dark"] .task-details-page .rounded-circle.bg-success.bg-opacity-10,
+[data-theme="dark"] .task-details-page .rounded-circle.bg-light {
+    background-color: var(--dm-surface-2) !important;
+    border-color: var(--dm-border) !important;
+}
+
+[data-theme="dark"] .task-details-page .reply-context-box .text-secondary,
+[data-theme="dark"] .task-details-page .comment-bubble .text-secondary,
+[data-theme="dark"] .task-details-page .comment-reply-indicator .text-secondary,
+[data-theme="dark"] .task-details-page .file-input-box .text-secondary,
+[data-theme="dark"] .task-details-page .feedback-box .text-secondary,
+[data-theme="dark"] .task-details-page .comment-bubble .text-dark,
+[data-theme="dark"] .task-details-page .reply-context-box .text-dark,
+[data-theme="dark"] .task-details-page .comment-reply-indicator .text-dark,
+[data-theme="dark"] .task-details-page .file-input-box .text-dark,
+[data-theme="dark"] .task-details-page .feedback-box .text-dark,
+[data-theme="dark"] .task-details-page .text-dark,
+[data-theme="dark"] .task-details-page .text-secondary,
+[data-theme="dark"] .task-details-page .comment-body {
+    color: var(--dm-text) !important;
+}
+</style>
 
 @endsection

@@ -214,8 +214,11 @@ class DashboardController extends Controller
                 $courseTasks = collect([]);
             }
 
-            $courseTotalTasks = $courseTasks->count();
-            $courseSelesai = $courseTasks->filter(function ($task) use ($userId) {
+            // For report, we need to use the actual Task model from DB, not JSON
+            $courseTasksDB = \App\Models\Task::where('course_id', $course->id)->get();
+
+            $courseTotalTasks = $courseTasksDB->count();
+            $courseSelesai = $courseTasksDB->filter(function ($task) use ($userId) {
                 $submissions = $task->submissions ?? [];
                 if (is_string($submissions)) {
                     $submissions = json_decode($submissions, true) ?: [];
@@ -224,10 +227,10 @@ class DashboardController extends Controller
                 if ($submission && data_get($submission, 'status') === 'Selesai') {
                     return true;
                 }
-                return ($task->status ?? null) === 'Selesai';
+                return false;
             })->count();
 
-            $courseGradedScores = $courseTasks->map(function ($task) use ($userId) {
+            $courseGradedScores = $courseTasksDB->map(function ($task) use ($userId) {
                 $submissions = $task->submissions ?? [];
                 if (is_string($submissions)) {
                     $submissions = json_decode($submissions, true) ?: [];
@@ -235,9 +238,6 @@ class DashboardController extends Controller
                 $submission = $submissions[$userId] ?? null;
                 if ($submission && isset($submission['score']) && is_numeric($submission['score'])) {
                     return (float) $submission['score'];
-                }
-                if (isset($task->score) && is_numeric($task->score)) {
-                    return (float) $task->score;
                 }
                 return null;
             })->filter(function ($score) {
@@ -272,9 +272,37 @@ class DashboardController extends Controller
 
             $progress = $courseTotalTasks > 0 ? round(($courseSelesai / $courseTotalTasks) * 100) : 0;
 
+            // Transform tasks to include submission data for display in report
+            $tasksWithSubmissions = $courseTasksDB->map(function ($task) use ($userId) {
+                $submissions = $task->submissions ?? [];
+                if (is_string($submissions)) {
+                    $submissions = json_decode($submissions, true) ?: [];
+                }
+                $submission = $submissions[$userId] ?? null;
+                
+                // Create a new object combining task and submission data
+                $taskData = $task->toArray();
+                if ($submission) {
+                    $taskData['score'] = $submission['score'] ?? null;
+                    $taskData['feedback'] = $submission['feedback'] ?? null;
+                    $taskData['status'] = data_get($submission, 'status', $task->status);
+                }
+                
+                // Add accessor attributes
+                $taskData['status_bg'] = $task->status_bg;
+                $taskData['status_color'] = $task->status_color;
+                $taskData['status_icon'] = $task->status_icon;
+                $taskData['score_color'] = $task->score_color;
+                
+                // Keep the original task model for method calls like scoreGrade()
+                $taskData['_model'] = $task;
+                
+                return (object)$taskData;
+            });
+
             $reportData[] = (object)[
                 'course' => $course,
-                'tasks' => $courseTasks,
+                'tasks' => $tasksWithSubmissions,
                 'allTasks' => $courseTotalTasks,
                 'selesai' => $courseSelesai,
                 'graded' => $courseGraded,

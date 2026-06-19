@@ -12,10 +12,12 @@ class Course extends Model
     // Mengizinkan semua input kolom masuk (sangat aman)
     protected $guarded = [];
 
-    // Hapus casting untuk fields yang juga memiliki relasi Eloquent
-    // agar property dynamic `->tasks`, `->materials`, `->users` mengembalikan relasi,
-    // bukan attribute JSON yang menimpa relasi.
-    protected $casts = [];
+    // Cast JSON columns to arrays
+    protected $casts = [
+        'materials' => 'json',
+        'tasks' => 'json',
+        'users' => 'json',
+    ];
 
     public function materials()
     {

@@ -250,4 +250,97 @@ class TaskController extends Controller
             'taskGroups' => $taskGroups
         ]);
     }
+
+    /**
+     * Show submissions page for teacher to grade
+     */
+    public function showSubmissions($course_id, $task_id)
+    {
+        $course = Course::find($course_id);
+        if (!$course) abort(404);
+
+        // Ensure user is the teacher
+        if (auth()->id() !== $course->creator_id) {
+            abort(403, 'Hanya pengajar dapat melihat penilaian.');
+        }
+
+        $task = Task::where('course_id', $course->id)->find($task_id);
+        if (!$task) abort(404);
+
+        // Get all students in the course
+        $students = $course->users()->wherePivot('role', 'student')->get();
+
+        // Normalize submissions
+        $submissionsRaw = $task->submissions ?? [];
+        if (is_string($submissionsRaw)) {
+            $submissionsRaw = json_decode($submissionsRaw, true) ?: [];
+        }
+
+        $submissions = [];
+        foreach ($submissionsRaw as $userId => $data) {
+            $submissions[(int)$userId] = $data;
+        }
+
+        // Count submissions and grades
+        $submittedCount = count($submissions);
+        $gradedCount = 0;
+        foreach ($submissions as $data) {
+            if (isset($data['score']) && $data['score'] !== null) {
+                $gradedCount++;
+            }
+        }
+
+        return view('task_submissions', [
+            'course' => $course,
+            'task' => $task,
+            'students' => $students,
+            'submissions' => $submissions,
+            'totalStudents' => $students->count(),
+            'submittedCount' => $submittedCount,
+            'gradedCount' => $gradedCount,
+        ]);
+    }
+
+    /**
+     * Grade a submission (update score and feedback)
+     */
+    public function grade(Request $request, $course_id, $task_id, $student_id)
+    {
+        $course = Course::find($course_id);
+        if (!$course) abort(404);
+
+        // Ensure user is the teacher
+        if (auth()->id() !== $course->creator_id) {
+            abort(403, 'Hanya pengajar dapat memberikan penilaian.');
+        }
+
+        $task = Task::where('course_id', $course->id)->find($task_id);
+        if (!$task) abort(404);
+
+        $validated = $request->validate([
+            'score' => 'required|integer|min:0|max:100',
+            'feedback' => 'nullable|string|max:1000',
+        ]);
+
+        // Get submissions
+        $submissions = $task->submissions ?? [];
+        if (is_string($submissions)) {
+            $submissions = json_decode($submissions, true) ?: [];
+        }
+
+        // Ensure submission exists
+        if (!isset($submissions[$student_id])) {
+            return back()->with('error', 'Submission tidak ditemukan untuk siswa ini.');
+        }
+
+        // Update score and feedback
+        $submissions[$student_id]['score'] = (int)$validated['score'];
+        $submissions[$student_id]['feedback'] = $validated['feedback'];
+        $submissions[$student_id]['graded_at'] = now()->toDateTimeString();
+
+        $task->submissions = $submissions;
+        $task->save();
+
+        return back()->with('success', 'Nilai berhasil disimpan.');
+    }
 }
