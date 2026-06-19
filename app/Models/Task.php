@@ -89,4 +89,22 @@ class Task extends Model
     {
         return $this->belongsTo(Course::class);
     }
+
+    /**
+     * Get all student submissions for this task with user data
+     */
+    public function getStudentSubmissionsAttribute()
+    {
+        $submissionsRaw = $this->submissions ?? [];
+        if (is_string($submissionsRaw)) {
+            $submissionsRaw = json_decode($submissionsRaw, true) ?: [];
+        }
+
+        $result = [];
+        foreach ($submissionsRaw as $userId => $submission) {
+            $user = User::find($userId);
+            $result[] = array_merge(['user_id' => $userId, 'user' => $user], $submission);
+        }
+        return collect($result);
+    }
 }

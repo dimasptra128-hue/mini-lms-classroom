@@ -190,9 +190,9 @@ use Illuminate\Support\Str;
                     </div>
                 @else
                     <div class="table-responsive">
-                        <table class="table mb-0" style="font-size: 0.85rem;">
+                        <table class="table mb-0 report-table" style="font-size: 0.85rem;">
                             <thead>
-                                <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                                <tr class="report-table-head">
                                     <th class="px-4 py-3 fw-semibold text-secondary" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; width: 40%;">Judul Tugas</th>
                                     <th class="px-3 py-3 fw-semibold text-secondary" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">Deadline</th>
                                     <th class="px-3 py-3 fw-semibold text-secondary" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; text-align: center;">Status</th>
@@ -203,7 +203,7 @@ use Illuminate\Support\Str;
                             </thead>
                             <tbody>
                                 @foreach($data->tasks as $task)
-                                    <tr class="task-row" style="border-bottom: 1px solid #f1f5f9;">
+                                    <tr class="task-row">
 
                                         {{-- Judul --}}
                                         <td class="px-4 py-3">
@@ -252,7 +252,9 @@ use Illuminate\Support\Str;
                                                 <span class="fw-bold d-inline-flex align-items-center justify-content-center rounded-circle grade-badge"
                                                       style="width: 30px; height: 30px; background: {{ $task->score_color }}18; color: {{ $task->score_color }}; font-size: 0.8rem; cursor: help;"
                                                       title="Nilai {{ $task->score }}">
-                                                    {{ $task->scoreGrade() }}
+                                                    {{ isset($task->_model) ? $task->_model->scoreGrade() : (
+                                                        $task->score >= 90 ? 'A' : ($task->score >= 80 ? 'B' : ($task->score >= 70 ? 'C' : ($task->score >= 60 ? 'D' : 'E')))
+                                                    ) }}
                                                 </span>
                                             @else
                                                 <span class="text-secondary" style="font-size: 0.8rem;">–</span>
@@ -370,6 +372,59 @@ use Illuminate\Support\Str;
 .grade-badge:hover {
     transform: scale(1.2);
     box-shadow: 0 4px 6px rgba(0,0,0,0.06);
+}
+
+.report-table thead tr.report-table-head {
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.report-table tbody tr.task-row {
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.report-table tbody tr.task-row:hover {
+    background-color: #f8fafc !important;
+}
+
+[data-theme="dark"] .report-table thead tr.report-table-head {
+    background: rgba(148,163,184,0.1);
+    border-bottom-color: #334155;
+}
+
+[data-theme="dark"] .report-table tbody tr.task-row {
+    border-bottom-color: #334155;
+}
+
+[data-theme="dark"] .report-table tbody tr.task-row:hover {
+    background-color: rgba(148,163,184,0.12) !important;
+}
+
+.report-table,
+.report-table thead,
+.report-table tbody,
+.report-table tr,
+.report-table th,
+.report-table td {
+    background-color: transparent !important;
+}
+
+[data-theme="dark"] .report-table,
+[data-theme="dark"] .report-table thead,
+[data-theme="dark"] .report-table tbody,
+[data-theme="dark"] .report-table tr,
+[data-theme="dark"] .report-table th,
+[data-theme="dark"] .report-table td {
+    background-color: transparent !important;
+}
+
+[data-theme="dark"] .report-table td,
+[data-theme="dark"] .report-table th {
+    color: var(--dm-text) !important;
+}
+
+[data-theme="dark"] .report-table .text-secondary {
+    color: var(--dm-text-muted) !important;
 }
 
 /* Pure CSS tooltips */

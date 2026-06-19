@@ -41,6 +41,8 @@ Route::get('/kelas/{course_id}/tasks/{task_id}/download', [TaskController::class
 Route::delete('/kelas/{course_id}/tasks/{task_id}', [TaskController::class, 'destroy'])->name('tasks.delete');
 Route::post('/kelas/{course_id}/tasks/{task_id}/submit', [TaskController::class, 'submit'])->name('tasks.submit');
 Route::delete('/kelas/{course_id}/tasks/{task_id}/submission', [TaskController::class, 'cancelSubmission'])->name('tasks.cancelSubmission');
+Route::get('/kelas/{course_id}/tasks/{task_id}/submissions', [TaskController::class, 'showSubmissions'])->name('tasks.showSubmissions');
+Route::post('/kelas/{course_id}/tasks/{task_id}/grade/{student_id}', [TaskController::class, 'grade'])->name('tasks.grade');
 
 // Interaksi Komentar & Member
 Route::post('/kelas/{course_id}/{type}/{item_id}/comments', [CourseController::class, 'storeComment'])->name('comments.store');
