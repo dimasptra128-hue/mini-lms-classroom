@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Course;
 use App\Models\Material;
 use App\Models\Task;
-use Illuminate\Support\Str;
+//use Illuminate\Support\Str;
 
 class CourseController extends Controller
 {
@@ -18,9 +18,9 @@ class CourseController extends Controller
         $courses = Course::withCount(['users', 'tasks'])
             ->where(function ($query) use ($user) {
                 $query->where('creator_id', $user->id)
-                      ->orWhereHas('users', function ($q) use ($user) {
-                          $q->where('users.id', $user->id);
-                      });
+                    ->orWhereHas('users', function ($q) use ($user) {
+                        $q->where('users.id', $user->id);
+                    });
             })
             ->get();
 

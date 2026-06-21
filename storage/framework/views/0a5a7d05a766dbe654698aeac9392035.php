@@ -55,10 +55,16 @@
                                         <?php echo e($u->name); ?>
 
                                         
-                                        <?php if($u->role === 'admin' || $u->is_admin): ?>
-                                            <span class="badge rounded-pill px-2 py-0.5" style="font-size: 0.65rem; background-color: #f3e8ff; color: #7c3aed; border: 1px solid #d8b4fe;">Admin</span>
+                                        <?php if($u->role === 'admin'): ?>
+                                            <span class="badge rounded-pill px-2 py-0.5"
+                                                style="font-size: 0.65rem; background-color: #f3e8ff; color: #7c3aed; border: 1px solid #d8b4fe;">
+                                                Admin
+                                            </span>
                                         <?php else: ?>
-                                            <span class="badge rounded-pill px-2 py-0.5" style="font-size: 0.65rem; background-color: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe;">User</span>
+                                            <span class="badge rounded-pill px-2 py-0.5"
+                                                style="font-size: 0.65rem; background-color: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe;">
+                                                Student
+                                            </span>
                                         <?php endif; ?>
                                     </div>
                                     <div class="text-secondary small">ID: #<?php echo e($u->id); ?></div>
@@ -75,6 +81,19 @@
                         <td class="text-center">
                             <?php if($u->id !== auth()->id()): ?>
                                 <div class="d-flex justify-content-center align-items-center gap-2">
+                                    <form action="<?php echo e(route('admin.users.toggle-role', $u->id)); ?>"
+                                        method="POST"
+                                        class="d-inline"
+                                        onsubmit="return confirm('Ubah role user <?php echo e($u->name); ?>?')">
+                                        <?php echo csrf_field(); ?>
+                                        <button type="submit"
+                                            class="btn btn-sm btn-outline-primary px-2.5 py-1 rounded-3 fw-semibold d-inline-flex align-items-center gap-1 text-nowrap"
+                                            style="font-size: 0.8rem;">
+                                            <i class="bi bi-person-gear"></i>
+                                            <?php echo e($u->role === 'admin' ? 'Jadikan Student' : 'Jadikan Admin'); ?>
+
+                                        </button>
+                                    </form>
                                     
                                     <form action="<?php echo e(route('admin.users.delete', $u->id)); ?>" method="POST" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus akun user <?php echo e($u->name); ?>? Semua kelas yang dia ajar atau ikuti akan terpengaruh.')">
                                         <?php echo csrf_field(); ?>

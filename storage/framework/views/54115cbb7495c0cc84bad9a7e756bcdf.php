@@ -112,7 +112,11 @@
                             </div>
                         </div>
                         <?php if($task->file_path): ?>
-                            <a href="<?php echo e(asset('storage/' . $task->file_path)); ?>" download class="btn btn-sm btn-outline-secondary rounded-3 px-3 d-flex align-items-center gap-1 download-btn" style="font-size: 0.78rem;">
+                            
+                            <a href="<?php echo e(asset('storage/' . $task->file_path)); ?>" 
+                            download="<?php echo e($task->file_name); ?>" 
+                            class="btn btn-sm btn-outline-secondary rounded-3 px-3 d-flex align-items-center gap-1 download-btn" 
+                            style="font-size: 0.78rem;">
                                 <i class="bi bi-download download-icon"></i> <span class="download-text">Unduh</span>
                             </a>
                         <?php endif; ?>
