@@ -112,7 +112,11 @@
                             </div>
                         </div>
                         @if($task->file_path)
-                            <a href="{{ asset('storage/' . $task->file_path) }}" download class="btn btn-sm btn-outline-secondary rounded-3 px-3 d-flex align-items-center gap-1 download-btn" style="font-size: 0.78rem;">
+                            {{-- Modifikasi di bagian atribut download --}}
+                            <a href="{{ asset('storage/' . $task->file_path) }}" 
+                            download="{{ $task->file_name }}" 
+                            class="btn btn-sm btn-outline-secondary rounded-3 px-3 d-flex align-items-center gap-1 download-btn" 
+                            style="font-size: 0.78rem;">
                                 <i class="bi bi-download download-icon"></i> <span class="download-text">Unduh</span>
                             </a>
                         @endif

@@ -1,5 +1,3 @@
-
-
 <?php $__env->startSection('title', 'Kelola Penilaian - ' . $task->title); ?>
 
 <?php $__env->startSection('content'); ?>
@@ -141,10 +139,11 @@
                         </td>
                         <td style="padding: 1rem; font-size: 0.9rem;">
                             <?php if($hasSubmitted && data_get($submission, 'file_path')): ?>
+                                
                                 <a href="<?php echo e(asset('storage/' . data_get($submission, 'file_path'))); ?>" 
-                                   download 
-                                   class="btn btn-sm btn-outline-secondary rounded-3"
-                                   style="font-size: 0.75rem; padding: 0.3rem 0.6rem;">
+                                download="<?php echo e(data_get($submission, 'file_name') ?? 'Jawaban_Tugas'); ?>" 
+                                class="btn btn-sm btn-outline-secondary rounded-3"
+                                style="font-size: 0.75rem; padding: 0.3rem 0.6rem;">
                                     <i class="bi bi-download"></i> Unduh
                                 </a>
                             <?php else: ?>

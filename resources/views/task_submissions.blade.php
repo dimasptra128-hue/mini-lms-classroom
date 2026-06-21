@@ -138,10 +138,11 @@
                         </td>
                         <td style="padding: 1rem; font-size: 0.9rem;">
                             @if($hasSubmitted && data_get($submission, 'file_path'))
+                                {{-- Perbaikan pada atribut download dengan memberikan nama asli file --}}
                                 <a href="{{ asset('storage/' . data_get($submission, 'file_path')) }}" 
-                                   download 
-                                   class="btn btn-sm btn-outline-secondary rounded-3"
-                                   style="font-size: 0.75rem; padding: 0.3rem 0.6rem;">
+                                download="{{ data_get($submission, 'file_name') ?? 'Jawaban_Tugas' }}" 
+                                class="btn btn-sm btn-outline-secondary rounded-3"
+                                style="font-size: 0.75rem; padding: 0.3rem 0.6rem;">
                                     <i class="bi bi-download"></i> Unduh
                                 </a>
                             @else

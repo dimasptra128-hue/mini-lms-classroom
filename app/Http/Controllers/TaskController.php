@@ -31,10 +31,16 @@ class TaskController extends Controller
         $fileName = null;
         $filePath = null;
         if ($request->hasFile('file_upload') && $request->file('file_upload')->isValid()) {
-            $fileName = $request->file('file_upload')->getClientOriginalName();
-            $storedPath = $request->file('file_upload')->store('public/task_uploads');
-            $filePath = $storedPath ? str_replace('public/', '', $storedPath) : null;
-        }
+        $file = $request->file('file_upload');
+        $fileName = $file->getClientOriginalName();
+        
+        // 1. Simpan langsung ke disk 'public' di dalam folder 'task_uploads'
+        // Ini akan otomatis masuk ke: storage/app/public/task_uploads
+        $storedPath = $file->store('task_uploads', 'public');
+        
+        // 2. Simpan path aslinya (misal: "task_uploads/random_name.docx") ke database
+        $filePath = $storedPath; 
+    }
 
         Task::create([
             'course_id' => $id,
@@ -153,18 +159,33 @@ class TaskController extends Controller
 
         $fileName = null;
         $filePath = null;
+        
         if ($request->hasFile('submission_file') && $request->file('submission_file')->isValid()) {
-            $fileName = $request->file('submission_file')->getClientOriginalName();
-            $storedPath = $request->file('submission_file')->store('public/submissions');
-            $filePath = $storedPath ? str_replace('public/', '', $storedPath) : null;
+            $file = $request->file('submission_file');
+            $fileName = $file->getClientOriginalName();
+            
+            // FIX: Simpan langsung ke disk 'public', folder 'submissions'
+            // Ini akan masuk ke storage/app/public/submissions
+            $storedPath = $file->store('submissions', 'public');
+            
+            // Path yang disimpan di database langsung path bersihnya (misal: "submissions/abcde123.pdf")
+            $filePath = $storedPath;
         }
 
+        // Ambil data submissions lama, pastikan ter-decode jika bentuknya string JSON
         $submissions = $task->submissions ?? [];
+        if (is_string($submissions)) {
+            $submissions = json_decode($submissions, true) ?: [];
+        }
+
+        // Masukkan data pengumpulan baru atau perbarui data lama (jika edit tugas)
         $submissions[$userId] = [
             'file_name' => $fileName,
             'file_path' => $filePath,
             'submitted_at' => now()->toDateTimeString(),
-            'status' => 'Selesai'
+            'status' => 'Selesai',
+            'score' => $submissions[$userId]['score'] ?? null,       // Pertahankan nilai lama jika ada
+            'feedback' => $submissions[$userId]['feedback'] ?? null, // Pertahankan feedback lama jika ada
         ];
 
         $task->submissions = $submissions;

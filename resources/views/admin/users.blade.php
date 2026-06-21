@@ -55,10 +55,16 @@
                                     <div class="fw-bold text-dark d-flex align-items-center gap-1.5 flex-wrap">
                                         {{ $u->name }}
                                         {{-- Cek status admin lewat kolom role atau is_admin --}}
-                                        @if($u->role === 'admin' || $u->is_admin)
-                                            <span class="badge rounded-pill px-2 py-0.5" style="font-size: 0.65rem; background-color: #f3e8ff; color: #7c3aed; border: 1px solid #d8b4fe;">Admin</span>
+                                        @if($u->role === 'admin')
+                                            <span class="badge rounded-pill px-2 py-0.5"
+                                                style="font-size: 0.65rem; background-color: #f3e8ff; color: #7c3aed; border: 1px solid #d8b4fe;">
+                                                Admin
+                                            </span>
                                         @else
-                                            <span class="badge rounded-pill px-2 py-0.5" style="font-size: 0.65rem; background-color: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe;">User</span>
+                                            <span class="badge rounded-pill px-2 py-0.5"
+                                                style="font-size: 0.65rem; background-color: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe;">
+                                                Student
+                                            </span>
                                         @endif
                                     </div>
                                     <div class="text-secondary small">ID: #{{ $u->id }}</div>
@@ -75,6 +81,18 @@
                         <td class="text-center">
                             @if($u->id !== auth()->id())
                                 <div class="d-flex justify-content-center align-items-center gap-2">
+                                    <form action="{{ route('admin.users.toggle-role', $u->id) }}"
+                                        method="POST"
+                                        class="d-inline"
+                                        onsubmit="return confirm('Ubah role user {{ $u->name }}?')">
+                                        @csrf
+                                        <button type="submit"
+                                            class="btn btn-sm btn-outline-primary px-2.5 py-1 rounded-3 fw-semibold d-inline-flex align-items-center gap-1 text-nowrap"
+                                            style="font-size: 0.8rem;">
+                                            <i class="bi bi-person-gear"></i>
+                                            {{ $u->role === 'admin' ? 'Jadikan Student' : 'Jadikan Admin' }}
+                                        </button>
+                                    </form>
                                     {{-- Button Hapus --}}
                                     <form action="{{ route('admin.users.delete', $u->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus akun user {{ $u->name }}? Semua kelas yang dia ajar atau ikuti akan terpengaruh.')">
                                         @csrf

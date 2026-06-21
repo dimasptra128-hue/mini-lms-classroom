@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+// use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Course;
-use App\Models\Material;
-use App\Models\Task;
+// use App\Models\Material;
+// use App\Models\Task;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
@@ -41,7 +41,7 @@ class AdminController extends Controller
     public function users()
     {
         // 1. Ambil semua data user dari database, diurutkan dari yang terbaru
-        $users = User::orderBy('created_at', 'desc')->get();
+            $users = User::withCount('courses')->orderBy('created_at', 'desc')->get();
 
         // 2. Kirim data ke file Blade admin
         // Sesuaikan 'admin.users' dengan lokasi folder view Anda (misal: admin/users.blade.php)
@@ -67,7 +67,24 @@ class AdminController extends Controller
 
     public function toggleRole($id)
     {
-        return back()->with('success', 'Peran user berhasil diubah!');
+        $user = User::find($id);
+
+        if (!$user) {
+            return back()->with('error', 'User tidak ditemukan.');
+        }
+
+        // Jangan sampai admin mengubah role dirinya sendiri
+        if ($user->id === auth()->id()) {
+            return back()->with('error', 'Tidak dapat mengubah role akun sendiri.');
+        }
+
+        $user->role = $user->role === 'admin'
+            ? 'student'
+            : 'admin';
+
+        $user->save();
+
+        return back()->with('success', 'Role berhasil diubah.');
     }
 
     public function courses()
@@ -99,6 +116,30 @@ class AdminController extends Controller
 
     public function kickMember($course_id, $user_id)
     {
-        return back()->with('success', 'Anggota berhasil dikeluarkan oleh admin!');
+        $course = Course::find($course_id);
+
+        if (!$course) {
+            return back()->with('error', 'Kelas tidak ditemukan.');
+        }
+
+        $user = User::find($user_id);
+
+        if (!$user) {
+            return back()->with('error', 'User tidak ditemukan.');
+        }
+
+        // Jangan keluarkan creator kelas
+        if ($course->creator_id == $user_id) {
+            return back()->with('error', 'Pengajar kelas tidak dapat dikeluarkan.');
+        }
+
+        // Pastikan user memang anggota kelas
+        if (!$course->users()->where('users.id', $user_id)->exists()) {
+            return back()->with('error', 'User bukan anggota kelas ini.');
+        }
+
+        $course->users()->detach($user_id);
+
+        return back()->with('success', $user->name . ' berhasil dikeluarkan dari kelas.');
     }
 }
