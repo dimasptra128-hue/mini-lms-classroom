@@ -11,7 +11,7 @@ class Kelas extends Model
     public function __construct($attributes = [])
     {
         foreach ($attributes as $key => $value) {
-            $this->$key = $val;
+            $this->$key = $value;
         }
     }
     use HasFactory;
