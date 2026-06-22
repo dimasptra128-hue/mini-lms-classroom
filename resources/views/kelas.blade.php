@@ -50,10 +50,18 @@
                 {{-- Course Body --}}
                 <div class="card-body px-4 py-3">
                     <div class="d-flex align-items-center gap-2 mb-3">
-                        <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold"
-                             style="width: 28px; height: 28px; font-size: 0.7rem; background: {{ $course->color }};">
-                            {{ strtoupper(substr($course->teacher_name, 0, 2)) }}
-                        </div>
+                        @if($course->creator?->avatar)
+                            <img
+                                src="{{ asset('storage/' . $course->creator->avatar) }}"
+                                alt="{{ $course->teacher_name }}"
+                                class="rounded-circle"
+                                style="width:28px;height:28px;object-fit:cover;">
+                        @else
+                            <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold"
+                                style="width:28px;height:28px;font-size:0.7rem;background:{{ $course->color }};">
+                                {{ strtoupper(substr($course->teacher_name, 0, 2)) }}
+                            </div>
+                        @endif
                         <span class="text-secondary small">{{ $course->teacher_name }}</span>
                     </div>
 

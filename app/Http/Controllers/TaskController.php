@@ -241,6 +241,18 @@ class TaskController extends Controller
 
         $userId = auth()->id();
 
+        $allTasks->each(function ($task) use ($userId) {
+            $subs = $task->submissions ?? [];
+
+            if (is_string($subs)) {
+                $subs = json_decode($subs, true) ?: [];
+            }
+
+            $task->is_completed =
+                isset($subs[$userId]) &&
+                ($subs[$userId]['status'] ?? null) === 'Selesai';
+        });
+
         $taskGroups = [
             [
                 'label' => 'Tugas Belum Selesai',

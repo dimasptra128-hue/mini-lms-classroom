@@ -147,10 +147,19 @@
                     </div>
                 </div>
                 <div class="d-flex gap-3 align-items-start">
-                    <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold flex-shrink-0"
-                         style="width: 38px; height: 38px; font-size: 0.8rem; background-color: <?php echo e($course->color); ?>;">
-                        <?php echo e(strtoupper(substr(optional(auth()->user())->name ?? 'U', 0, 2))); ?>
+                    <div class="rounded-circle overflow-hidden flex-shrink-0" style="width: 38px; height: 38px;">
+                        <?php if(auth()->user() && auth()->user()->avatar): ?>
+                            <img
+                                src="<?php echo e(asset('storage/' . auth()->user()->avatar)); ?>"
+                                alt="Avatar"
+                                style="width:100%; height:100%; object-fit:cover;">
+                        <?php else: ?>
+                            <div class="d-flex align-items-center justify-content-center text-white fw-bold"
+                                style="width:100%; height:100%; font-size:0.8rem; background-color: <?php echo e($course->color); ?>;">
+                                <?php echo e(strtoupper(substr(optional(auth()->user())->name ?? 'U', 0, 2))); ?>
 
+                            </div>
+                        <?php endif; ?>
                     </div>
                     <div class="flex-grow-1">
                         <textarea class="form-control" name="body" rows="2"
@@ -180,10 +189,30 @@
                 ?>
                 <?php $__empty_1 = true; $__currentLoopData = $comments; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $comment): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                     <div class="d-flex gap-3 align-items-start comment-item">
-                        <div class="rounded-circle d-flex align-items-center justify-content-center fw-bold flex-shrink-0 <?php echo e($comment->user_id === $course->creator_id ? 'creator-avatar' : 'comment-avatar-alt'); ?>"
-                             style="width: 36px; height: 36px; font-size: 0.75rem; <?php if($comment->user_id === $course->creator_id): ?> background-color: <?php echo e($course->color); ?>; color: #fff; <?php endif; ?>">
+                        <div class="rounded-circle overflow-hidden flex-shrink-0 <?php echo e($comment->user_id === $course->creator_id ? 'creator-avatar' : 'comment-avatar-alt'); ?>" style="width: 36px; height: 36px;">
+                            <?php if(optional($comment->user)->avatar): ?>
+                                <img
+                                    src="<?php echo e(asset('storage/' . $comment->user->avatar)); ?>"
+                                    alt="Avatar"
+                                    style="width:100%; height:100%; object-fit:cover;">
+                            <?php else: ?>
+                                <div class="d-flex align-items-center justify-content-center fw-bold"
+                                    style="
+                                        width:100%;
+                                        height:100%;
+                                        font-size:0.75rem;
+                                        <?php if($comment->user_id === $course->creator_id): ?>
+                                            background-color: <?php echo e($course->color); ?>;
+                                            color:#fff;
+                                        <?php else: ?>
+                                            background-color:#f1f5f9;
+                                            color:#0f172a;
+                                        <?php endif; ?>
+                                    ">
                                     <?php echo e(strtoupper(substr(optional($comment->user)->name ?? ($comment->name ?? 'U'), 0, 2))); ?>
 
+                                </div>
+                            <?php endif; ?>
                         </div>
                         <div class="flex-grow-1">
                             <div class="p-3 rounded-4 comment-bubble">

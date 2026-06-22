@@ -107,9 +107,19 @@
                                                 <?php $__empty_1 = true; $__currentLoopData = $teachers; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $teacher): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                                                     <div class="d-flex align-items-center justify-content-between gap-3">
                                                         <div class="d-flex align-items-center gap-2.5">
-                                                            <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold bg-primary" style="width: 34px; height: 34px; font-size: 0.75rem;">
-                                                                <?php echo e(strtoupper(substr($teacher->name, 0, 2))); ?>
+                                                            <div class="rounded-circle overflow-hidden" style="width: 34px; height: 34px; flex-shrink:0;">
+                                                                <?php if($teacher->avatar): ?>
+                                                                    <img
+                                                                        src="<?php echo e(asset('storage/' . $teacher->avatar)); ?>"
+                                                                        alt="<?php echo e($teacher->name); ?>"
+                                                                        style="width:100%; height:100%; object-fit:cover;">
+                                                                <?php else: ?>
+                                                                    <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold bg-primary"
+                                                                        style="width:100%; height:100%; font-size:0.75rem;">
+                                                                        <?php echo e(strtoupper(substr($teacher->name, 0, 2))); ?>
 
+                                                                    </div>
+                                                                <?php endif; ?>
                                                             </div>
                                                             <div>
                                                                 <div class="fw-semibold text-dark small" style="font-size: 0.85rem;"><?php echo e($teacher->name); ?></div>
@@ -129,9 +139,19 @@
                                                 <?php $__empty_1 = true; $__currentLoopData = $students; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $student): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                                                     <div class="d-flex align-items-center justify-content-between gap-3">
                                                         <div class="d-flex align-items-center gap-2.5">
-                                                            <div class="rounded-circle d-flex align-items-center justify-content-center text-dark fw-bold bg-light" style="width: 34px; height: 34px; font-size: 0.75rem;">
-                                                                <?php echo e(strtoupper(substr($student->name, 0, 2))); ?>
+                                                            <div class="rounded-circle overflow-hidden" style="width: 34px; height: 34px; flex-shrink:0;">
+                                                                <?php if($student->avatar): ?>
+                                                                    <img
+                                                                        src="<?php echo e(asset('storage/' . $student->avatar)); ?>"
+                                                                        alt="<?php echo e($student->name); ?>"
+                                                                        style="width:100%; height:100%; object-fit:cover;">
+                                                                <?php else: ?>
+                                                                    <div class="rounded-circle d-flex align-items-center justify-content-center text-dark fw-bold bg-light"
+                                                                        style="width:100%; height:100%; font-size:0.75rem;">
+                                                                        <?php echo e(strtoupper(substr($student->name, 0, 2))); ?>
 
+                                                                    </div>
+                                                                <?php endif; ?>
                                                             </div>
                                                             <div>
                                                                 <div class="fw-semibold text-dark small" style="font-size: 0.85rem;"><?php echo e($student->name); ?></div>

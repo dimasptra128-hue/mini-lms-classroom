@@ -33,4 +33,9 @@ class Course extends Model
     {
         return $this->belongsToMany(User::class)->withPivot('role');
     }
+
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'creator_id');
+    }
 }

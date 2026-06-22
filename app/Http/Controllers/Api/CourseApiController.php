@@ -17,14 +17,15 @@ class CourseApiController extends Controller
     {
         $user = auth()->user();
 
-        $courses = Course::withCount(['users', 'tasks'])
-        ->where(function ($query) use ($user) {
-            $query->where('creator_id', $user->id)
-                ->orWhereHas('users', function ($q) use ($user) {
-                    $q->where('users.id', $user->id);
-                });
-        })
-        ->get();
+        $courses = Course::with('creator')
+            ->withCount(['users', 'tasks'])
+            ->where(function ($query) use ($user) {
+                $query->where('creator_id', $user->id)
+                    ->orWhereHas('users', function ($q) use ($user) {
+                        $q->where('users.id', $user->id);
+                    });
+            })
+            ->get();
 
         return response()->json([
             'success' => true,
@@ -79,8 +80,14 @@ class CourseApiController extends Controller
      */
     public function show(string $id)
     {
-        $course = Course::with(['materials', 'tasks', 'users'])->find($id);
+        $course = Course::with([
+            'creator',
+            'materials',
+            'tasks',
+            'users'
+        ])->find($id);
 
+        // Cek kelas ada atau tidak
         if (!$course) {
             return response()->json([
                 'success' => false,
@@ -88,17 +95,51 @@ class CourseApiController extends Controller
             ], 404);
         }
 
+        // Validasi akses
+        $isMember = $course->users()
+            ->where('users.id', auth()->id())
+            ->exists();
+
+        if (
+            !$isMember &&
+            $course->creator_id !== auth()->id() &&
+            auth()->user()->role !== 'admin'
+        ) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda bukan anggota kelas ini.',
+            ], 403);
+        }
+
+        // Ambil teacher
         $teachers = $course->users()
             ->wherePivot('role', 'teacher')
             ->get();
 
+        // Fallback kalau teacher kosong
+        if ($teachers->isEmpty() && $course->creator) {
+            $teachers = collect([$course->creator]);
+        }
+
+        // Ambil student
         $students = $course->users()
             ->wherePivot('role', 'student')
             ->get();
 
-        $materials = Material::where('course_id', $course->id)->get();
+        // Ambil materi & tugas
+        $materials = Material::where(
+            'course_id',
+            $course->id
+        )
+        ->latest()
+        ->get();
 
-        $tasks = Task::where('course_id', $course->id)->get();
+        $tasks = Task::where(
+            'course_id',
+            $course->id
+        )
+        ->orderBy('due_date')
+        ->get();
 
         return response()->json([
             'success' => true,

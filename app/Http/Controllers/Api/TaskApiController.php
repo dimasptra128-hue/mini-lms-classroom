@@ -96,6 +96,17 @@ class TaskApiController extends Controller
             ], 404);
         }
 
+        // Hanya creator / admin yang boleh membuat tugas
+        if (
+            $course->creator_id !== auth()->id() &&
+            auth()->user()->role !== 'admin'
+        ) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tidak memiliki izin membuat tugas.',
+            ], 403);
+        }
+
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -103,7 +114,7 @@ class TaskApiController extends Controller
             'file_upload' => 'nullable|file|max:10240',
         ]);
 
-        // Parse datetime-local input
+        // Parse tanggal
         try {
             $due = Carbon::parse($validated['due_date']);
             $due_str = $due->toDateTimeString();
@@ -114,22 +125,35 @@ class TaskApiController extends Controller
         $fileName = null;
         $filePath = null;
 
-        if ($request->hasFile('file_upload') && $request->file('file_upload')->isValid()) {
+        // Upload file
+        if (
+            $request->hasFile('file_upload') &&
+            $request->file('file_upload')->isValid()
+        ) {
 
             $file = $request->file('file_upload');
-            $fileName = $file->getClientOriginalName();
-            $storedPath = $file->store('task_uploads', 'public');
-            $filePath = $storedPath;
+
+            $fileName =
+                $file->getClientOriginalName();
+
+            $filePath =
+                $file->store(
+                    'task_uploads',
+                    'public'
+                );
         }
 
         $task = Task::create([
-            'course_id' => $id,
+            'course_id' => $course->id,
             'title' => $validated['title'],
             'description' => $validated['description'] ?? null,
             'due_date' => $due_str,
             'file_name' => $fileName,
             'file_path' => $filePath,
         ]);
+
+        // Refresh biar relasi ikut
+        $task->load('course');
 
         return response()->json([
             'success' => true,
@@ -143,7 +167,9 @@ class TaskApiController extends Controller
      */
     public function show($course_id, $task_id)
     {
-        $course = Course::find($course_id);
+        // Ambil course + creator
+        $course = Course::with(['creator', 'users'])
+            ->find($course_id);
 
         if (!$course) {
             return response()->json([
@@ -152,7 +178,9 @@ class TaskApiController extends Controller
             ], 404);
         }
 
-        $task = Task::where('course_id', $course->id)->find($task_id);
+        // Ambil task berdasarkan kelas
+        $task = Task::where('course_id', $course->id)
+            ->firstWhere('id', $task_id);
 
         if (!$task) {
             return response()->json([
@@ -161,12 +189,32 @@ class TaskApiController extends Controller
             ], 404);
         }
 
-        $userRole = ($course->creator_id === auth()->id())
+        // Cek apakah user anggota kelas
+        $isMember = $course->users()
+            ->where('users.id', auth()->id())
+            ->exists();
+
+        if (
+            !$isMember &&
+            $course->creator_id !== auth()->id() &&
+            auth()->user()->role !== 'admin'
+        ) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda bukan anggota kelas ini.',
+            ], 403);
+        }
+
+        // Role user
+        $userRole =
+            ($course->creator_id === auth()->id())
             ? 'teacher'
             : 'student';
 
+        // Tugas lain
         $otherTasks = Task::where('course_id', $course->id)
             ->where('id', '!=', $task->id)
+            ->latest()
             ->take(4)
             ->get();
 
@@ -174,9 +222,23 @@ class TaskApiController extends Controller
             'success' => true,
             'message' => 'Detail tugas berhasil diambil.',
             'data' => [
-                'course' => $course,
+                'course' => [
+                    'id' => $course->id,
+                    'name' => $course->name,
+                    'color' => $course->color,
+                    'teacher' => [
+                        'id' => $course->creator?->id,
+                        'name' => $course->creator?->name,
+                        'avatar' => $course->creator?->avatar
+                            ? asset('storage/'.$course->creator->avatar)
+                            : null,
+                    ],
+                ],
+
                 'task' => $task,
+
                 'userRole' => $userRole,
+
                 'otherTasks' => $otherTasks,
             ],
         ], 200);
@@ -204,8 +266,11 @@ class TaskApiController extends Controller
             ], 404);
         }
 
-        // Hanya creator/pengajar yang boleh menghapus
-        if (auth()->id() !== $course->creator_id) {
+        // Hanya creator / guru / admin yang boleh hapus
+        if (
+            auth()->id() !== $course->creator_id &&
+            auth()->user()->role !== 'admin'
+        ) {
             return response()->json([
                 'success' => false,
                 'message' => 'Hanya pengajar dapat menghapus tugas ini.',
@@ -222,8 +287,8 @@ class TaskApiController extends Controller
             ], 404);
         }
 
-        // Hapus file jika ada
-        if ($task->file_path) {
+        // Hapus file lampiran tugas
+        if (!empty($task->file_path)) {
             $storagePath = 'public/' . $task->file_path;
 
             if (Storage::exists($storagePath)) {
@@ -231,7 +296,24 @@ class TaskApiController extends Controller
             }
         }
 
-        // Hapus data tugas
+        // Hapus seluruh file submission siswa (kalau ada)
+        $submissions = $task->submissions ?? [];
+
+        if (is_string($submissions)) {
+            $submissions = json_decode($submissions, true) ?: [];
+        }
+
+        foreach ($submissions as $submission) {
+            if (!empty($submission['file_path'])) {
+                $submissionPath = 'public/' . $submission['file_path'];
+
+                if (Storage::exists($submissionPath)) {
+                    Storage::delete($submissionPath);
+                }
+            }
+        }
+
+        // Hapus task
         $task->delete();
 
         return response()->json([
@@ -296,6 +378,13 @@ class TaskApiController extends Controller
             ], 404);
         }
 
+        if ($course->creator_id === auth()->id()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Pengajar tidak dapat mengumpulkan tugas.',
+            ], 403);
+        }
+
         $userId = auth()->id();
 
         $validated = $request->validate([
@@ -309,14 +398,12 @@ class TaskApiController extends Controller
             $request->hasFile('submission_file') &&
             $request->file('submission_file')->isValid()
         ) {
-            $fileName = $request->file('submission_file')->getClientOriginalName();
+            $fileName = $request->file('submission_file');
 
-            $storedPath = $request->file('submission_file')
-                ->store('public/submissions');
-
-            $filePath = $storedPath
-                ? str_replace('public/', '', $storedPath)
-                : null;
+            $file = $request->file('submission_file');
+            $fileName = $file->getClientOriginalName();
+            // simpan ke storage/app/public/submissions
+            $filePath = $file->store('submissions', 'public');
         }
 
         $submissions = $task->submissions ?? [];
@@ -393,12 +480,12 @@ class TaskApiController extends Controller
         // Hapus file yang telah diupload jika ada
         $entry = $submissions[$userId];
 
-        if (!empty($entry['file_path'])) {
-            $storagePath = 'public/' . $entry['file_path'];
-
-            if (Storage::exists($storagePath)) {
-                Storage::delete($storagePath);
-            }
+        if (
+            !empty($entry['file_path']) &&
+            Storage::disk('public')->exists($entry['file_path'])
+        ) {
+            Storage::disk('public')
+                ->delete($entry['file_path']);
         }
 
         // Hapus data submission user
@@ -480,8 +567,19 @@ class TaskApiController extends Controller
             'message' => 'Data pengumpulan tugas berhasil diambil.',
             'data' => [
                 'course' => $course,
+
                 'task' => $task,
-                'students' => $students,
+
+                'students' => $students->map(function ($student) {
+                    return [
+                        'id' => $student->id,
+                        'name' => $student->name,
+                        'email' => $student->email,
+                        'avatar' => $student->avatar
+                            ? asset('storage/' . $student->avatar)
+                            : null,
+                    ];
+                }),
                 'submissions' => $submissions,
                 'total_students' => $students->count(),
                 'submitted_count' => $submittedCount,

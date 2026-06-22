@@ -48,8 +48,21 @@
                     <tr style="font-size: 0.88rem;">
                         <td>
                             <div class="d-flex align-items-center gap-3">
-                                <div class="rounded-3 d-flex align-items-center justify-content-center bg-danger text-white fw-bold" style="width: 38px; height: 38px;">
-                                    {{ strtoupper(substr($u->name, 0, 2)) }}
+                                <div class="rounded-circle overflow-hidden"
+                                    style="width: 32px; height: 32px; flex-shrink:0;">
+
+                                    @if($u->avatar)
+                                        <img
+                                            src="{{ asset('storage/' . $u->avatar) }}"
+                                            alt="{{ $u->name }}"
+                                            style="width:100%; height:100%; object-fit:cover;">
+                                    @else
+                                        <div class="rounded-circle d-flex align-items-center justify-content-center bg-danger text-white fw-bold"
+                                            style="width:100%; height:100%; font-size:0.75rem;">
+                                            {{ strtoupper(substr($u->name, 0, 2)) }}
+                                        </div>
+                                    @endif
+
                                 </div>
                                 <div>
                                     <div class="fw-bold text-dark d-flex align-items-center gap-1.5 flex-wrap">
