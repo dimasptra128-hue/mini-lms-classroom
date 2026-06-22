@@ -72,13 +72,33 @@
         </div>
         <div class="d-flex align-items-center justify-content-between mt-auto pt-3 border-top border-white border-opacity-10">
             <div class="d-flex align-items-center gap-2">
-                <div class="rounded-circle d-flex align-items-center justify-content-center text-dark fw-bold bg-white"
-                     style="width: 32px; height: 32px; font-size: 0.75rem; color: {{ $course->color }} !important;">
-                    {{ strtoupper(substr($course->teacher_name, 0, 2)) }}
+
+                <div class="rounded-circle overflow-hidden bg-white"
+                    style="width: 32px; height: 32px; flex-shrink:0;">
+
+                    @if($course->creator && $course->creator->avatar)
+                        <img
+                            src="{{ asset('storage/' . $course->creator->avatar) }}"
+                            alt="Teacher Avatar"
+                            style="width:100%; height:100%; object-fit:cover;">
+                    @else
+                        <div class="d-flex align-items-center justify-content-center fw-bold"
+                            style="width:100%; height:100%; font-size:0.75rem; color: {{ $course->color }};">
+                            {{ strtoupper(substr($course->teacher_name, 0, 2)) }}
+                        </div>
+                    @endif
+
                 </div>
-                <span class="small text-white fw-semibold">{{ $course->teacher_name }}</span>
+
+                <span class="small text-white fw-semibold">
+                    {{ $course->teacher_name }}
+                </span>
+
             </div>
-            <div class="text-white-50 small fw-medium">{{ $course->level }}</div>
+
+            <div class="text-white-50 small fw-medium">
+                {{ $course->level }}
+            </div>
         </div>
     </div>
 </div>
@@ -153,9 +173,22 @@
                 {{-- Announce box --}}
                 <div class="card border-0 shadow-sm rounded-4 bg-white p-4 mb-4">
                     <div class="d-flex gap-3 align-items-start">
-                        <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold"
-                             style="width: 40px; height: 40px; font-size: 0.85rem; background-color: {{ $course->color }}; flex-shrink: 0;">
-                            {{ strtoupper(substr(auth()->user()->name, 0, 2)) }}
+                        <div class="rounded-circle overflow-hidden"
+                            style="width: 40px; height: 40px; flex-shrink: 0;">
+
+                            @if($course->creator && $course->creator->avatar)
+                                <img
+                                    src="{{ asset('storage/' . $course->creator->avatar) }}"
+                                    alt="Avatar"
+                                    class="rounded-circle"
+                                    style="width:100%; height:100%; object-fit:cover;">
+                            @else
+                                <div class="d-flex align-items-center justify-content-center text-white fw-bold"
+                                    style="width:100%; height:100%; font-size:0.85rem; background-color: {{ $course->color }};">
+                                    {{ strtoupper(substr($course->teacher_name, 0, 2)) }}
+                                </div>
+                            @endif
+
                         </div>
                         <div class="flex-grow-1">
                             <div class="rounded-3 border px-3 py-2 text-secondary bg-light bg-opacity-50 cursor-pointer" 
@@ -345,9 +378,19 @@
                     <div class="d-flex flex-column gap-3">
                         @foreach($teachers as $teacher)
                         <div class="d-flex align-items-center gap-3">
-                            <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold"
-                                 style="width: 38px; height: 38px; font-size: 0.8rem; background-color: {{ $course->color }};">
-                                {{ strtoupper(substr($teacher->name, 0, 2)) }}
+                            <div class="rounded-circle overflow-hidden"
+                                style="width: 38px; height: 38px; flex-shrink: 0;">
+                                @if(!empty($teacher->avatar))
+                                    <img
+                                        src="{{ asset('storage/' . $teacher->avatar) }}"
+                                        alt="{{ $teacher->name }}"
+                                        style="width:100%; height:100%; object-fit:cover;">
+                                @else
+                                    <div class="d-flex align-items-center justify-content-center text-white fw-bold"
+                                        style="width:100%; height:100%; font-size:0.8rem; background-color: {{ $course->color }};">
+                                        {{ strtoupper(substr($teacher->name, 0, 2)) }}
+                                    </div>
+                                @endif
                             </div>
                             <div>
                                 <div class="fw-semibold text-dark small" style="font-size: 0.9rem;">{{ $teacher->name }}</div>
@@ -375,9 +418,18 @@
                             @foreach($students as $student)
                             <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap">
                                 <div class="d-flex align-items-center gap-3">
-                                    <div class="rounded-circle d-flex align-items-center justify-content-center text-dark fw-semibold"
-                                         style="width: 36px; height: 36px; font-size: 0.75rem; background-color: #f1f5f9;">
-                                        {{ strtoupper(substr($student->name, 0, 2)) }}
+                                    <div class="rounded-circle overflow-hidden" style="width: 36px; height: 36px; flex-shrink:0; background-color:#f1f5f9;">
+                                        @if($student->avatar)
+                                            <img
+                                                src="{{ asset('storage/' . $student->avatar) }}"
+                                                alt="Avatar"
+                                                style="width:100%; height:100%; object-fit:cover;">
+                                        @else
+                                            <div class="d-flex align-items-center justify-content-center text-dark fw-semibold"
+                                                style="width:100%; height:100%; font-size:0.75rem;">
+                                                {{ strtoupper(substr($student->name, 0, 2)) }}
+                                            </div>
+                                        @endif
                                     </div>
                                     <div>
                                         <div class="fw-semibold text-dark small" style="font-size: 0.85rem;">{{ $student->name }}</div>

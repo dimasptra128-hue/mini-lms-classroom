@@ -109,8 +109,18 @@
                                                 @forelse($teachers as $teacher)
                                                     <div class="d-flex align-items-center justify-content-between gap-3">
                                                         <div class="d-flex align-items-center gap-2.5">
-                                                            <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold bg-primary" style="width: 34px; height: 34px; font-size: 0.75rem;">
-                                                                {{ strtoupper(substr($teacher->name, 0, 2)) }}
+                                                            <div class="rounded-circle overflow-hidden" style="width: 34px; height: 34px; flex-shrink:0;">
+                                                                @if($teacher->avatar)
+                                                                    <img
+                                                                        src="{{ asset('storage/' . $teacher->avatar) }}"
+                                                                        alt="{{ $teacher->name }}"
+                                                                        style="width:100%; height:100%; object-fit:cover;">
+                                                                @else
+                                                                    <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold bg-primary"
+                                                                        style="width:100%; height:100%; font-size:0.75rem;">
+                                                                        {{ strtoupper(substr($teacher->name, 0, 2)) }}
+                                                                    </div>
+                                                                @endif
                                                             </div>
                                                             <div>
                                                                 <div class="fw-semibold text-dark small" style="font-size: 0.85rem;">{{ $teacher->name }}</div>
@@ -130,8 +140,18 @@
                                                 @forelse($students as $student)
                                                     <div class="d-flex align-items-center justify-content-between gap-3">
                                                         <div class="d-flex align-items-center gap-2.5">
-                                                            <div class="rounded-circle d-flex align-items-center justify-content-center text-dark fw-bold bg-light" style="width: 34px; height: 34px; font-size: 0.75rem;">
-                                                                {{ strtoupper(substr($student->name, 0, 2)) }}
+                                                            <div class="rounded-circle overflow-hidden" style="width: 34px; height: 34px; flex-shrink:0;">
+                                                                @if($student->avatar)
+                                                                    <img
+                                                                        src="{{ asset('storage/' . $student->avatar) }}"
+                                                                        alt="{{ $student->name }}"
+                                                                        style="width:100%; height:100%; object-fit:cover;">
+                                                                @else
+                                                                    <div class="rounded-circle d-flex align-items-center justify-content-center text-dark fw-bold bg-light"
+                                                                        style="width:100%; height:100%; font-size:0.75rem;">
+                                                                        {{ strtoupper(substr($student->name, 0, 2)) }}
+                                                                    </div>
+                                                                @endif
                                                             </div>
                                                             <div>
                                                                 <div class="fw-semibold text-dark small" style="font-size: 0.85rem;">{{ $student->name }}</div>

@@ -105,10 +105,19 @@
                         <td style="padding: 1rem; font-size: 0.9rem;"><?php echo e($index + 1); ?></td>
                         <td style="padding: 1rem; font-size: 0.9rem;">
                             <div class="d-flex align-items-center gap-2">
-                                <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold flex-shrink-0"
-                                     style="width: 32px; height: 32px; font-size: 0.7rem; background-color: <?php echo e($course->color); ?>;">
-                                    <?php echo e(strtoupper(substr($student->name, 0, 2))); ?>
+                                <div class="rounded-circle overflow-hidden flex-shrink-0" style="width: 32px; height: 32px; background-color: <?php echo e($course->color); ?>;">
+                                    <?php if($student->avatar): ?>
+                                        <img
+                                            src="<?php echo e(asset('storage/' . $student->avatar)); ?>"
+                                            alt="<?php echo e($student->name); ?>"
+                                            style="width:100%; height:100%; object-fit:cover;">
+                                    <?php else: ?>
+                                        <div class="d-flex align-items-center justify-content-center text-white fw-bold"
+                                            style="width:100%; height:100%; font-size:0.7rem;">
+                                            <?php echo e(strtoupper(substr($student->name, 0, 2))); ?>
 
+                                        </div>
+                                    <?php endif; ?>
                                 </div>
                                 <div>
                                     <div class="fw-medium text-dark"><?php echo e($student->name); ?></div>

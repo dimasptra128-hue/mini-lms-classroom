@@ -134,11 +134,17 @@
                 <i class="bi bi-plus-circle"></i>
             </button>
             <a href="{{ route('settings') }}">
-                <div class="d-flex align-items-center justify-content-center bg-primary text-white fw-bold"
-                     style="border-radius: 50%; width: 36px; height: 36px; font-size: 0.82rem; flex-shrink: 0;">
-                    {{ strtoupper(substr(Auth::user()->name, 0, 2)) }}
-                </div>
-            </a>
+                @if(Auth::user()->avatar)
+                    <img src="{{ asset('storage/' . Auth::user()->avatar) }}"
+                        alt="Avatar"
+                        style="width:36px;height:36px;border-radius:50%;object-fit:cover;">
+                @else
+                    <div class="d-flex align-items-center justify-content-center bg-primary text-white fw-bold"
+                        style="border-radius: 50%; width: 36px; height: 36px; font-size: 0.82rem; flex-shrink: 0;">
+                        {{ strtoupper(substr(Auth::user()->name, 0, 2)) }}
+                    </div>
+                @endif
+        </a>
         </div>
     </header>
 

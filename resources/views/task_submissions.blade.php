@@ -106,9 +106,18 @@
                         <td style="padding: 1rem; font-size: 0.9rem;">{{ $index + 1 }}</td>
                         <td style="padding: 1rem; font-size: 0.9rem;">
                             <div class="d-flex align-items-center gap-2">
-                                <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold flex-shrink-0"
-                                     style="width: 32px; height: 32px; font-size: 0.7rem; background-color: {{ $course->color }};">
-                                    {{ strtoupper(substr($student->name, 0, 2)) }}
+                                <div class="rounded-circle overflow-hidden flex-shrink-0" style="width: 32px; height: 32px; background-color: {{ $course->color }};">
+                                    @if($student->avatar)
+                                        <img
+                                            src="{{ asset('storage/' . $student->avatar) }}"
+                                            alt="{{ $student->name }}"
+                                            style="width:100%; height:100%; object-fit:cover;">
+                                    @else
+                                        <div class="d-flex align-items-center justify-content-center text-white fw-bold"
+                                            style="width:100%; height:100%; font-size:0.7rem;">
+                                            {{ strtoupper(substr($student->name, 0, 2)) }}
+                                        </div>
+                                    @endif
                                 </div>
                                 <div>
                                     <div class="fw-medium text-dark">{{ $student->name }}</div>

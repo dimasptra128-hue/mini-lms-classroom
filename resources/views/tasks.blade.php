@@ -44,12 +44,20 @@
                         </div>
                     @endif
                 </div>
-                @if ($task->status === 'Selesai')
-                    <span class="badge rounded-pill" style="background-color: #dcfce7; color: #16a34a; font-size: 0.72rem;">✓ Selesai</span>
+                @if ($task->is_completed)
+                    <span class="badge rounded-pill"
+                        style="background-color: #dcfce7; color: #16a34a; font-size: 0.72rem;">
+                        ✓ Selesai
+                    </span>
                 @elseif ($task->status === 'Draft')
-                    <span class="badge rounded-pill" style="background-color: #fff7ed; color: #b45309; font-size: 0.72rem;">Draft</span>
+                    <span class="badge rounded-pill"
+                        style="background-color: #fff7ed; color: #b45309; font-size: 0.72rem;">
+                        Draft
+                    </span>
                 @else
-                    <a href="{{ route('courses.show', $task->course_id) }}" class="btn btn-sm text-white" style="font-size: 0.8rem; background-color: {{ $task->course->color }}; border-radius: 6px; padding: 0.3rem 0.75rem; font-weight: 600; border: none;">
+                    <a href="{{ route('courses.show', $task->course_id) }}"
+                        class="btn btn-sm text-white"
+                        style="font-size: 0.8rem; background-color: {{ $task->course->color }}; border-radius: 6px; padding: 0.3rem 0.75rem; font-weight: 600; border: none;">
                         Kerjakan
                     </a>
                 @endif

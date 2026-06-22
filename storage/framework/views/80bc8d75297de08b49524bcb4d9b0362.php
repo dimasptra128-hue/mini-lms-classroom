@@ -147,10 +147,19 @@
                     </div>
                 </div>
                 <div class="d-flex gap-3 align-items-start">
-                    <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold flex-shrink-0"
-                         style="width: 38px; height: 38px; font-size: 0.8rem; background-color: <?php echo e($course->color); ?>;">
-                        <?php echo e(strtoupper(substr(optional(auth()->user())->name ?? 'U', 0, 2))); ?>
+                    <div class="rounded-circle overflow-hidden flex-shrink-0" style="width: 38px; height: 38px;">
+                        <?php if(auth()->user() && auth()->user()->avatar): ?>
+                            <img
+                                src="<?php echo e(asset('storage/' . auth()->user()->avatar)); ?>"
+                                alt="Avatar"
+                                style="width:100%; height:100%; object-fit:cover;">
+                        <?php else: ?>
+                            <div class="d-flex align-items-center justify-content-center text-white fw-bold"
+                                style="width:100%; height:100%; font-size:0.8rem; background-color: <?php echo e($course->color); ?>;">
+                                <?php echo e(strtoupper(substr(optional(auth()->user())->name ?? 'U', 0, 2))); ?>
 
+                            </div>
+                        <?php endif; ?>
                     </div>
                     <div class="flex-grow-1">
                         <textarea class="form-control" name="body" rows="2"

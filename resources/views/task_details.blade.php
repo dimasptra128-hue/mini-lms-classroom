@@ -146,9 +146,18 @@
                     </div>
                 </div>
                 <div class="d-flex gap-3 align-items-start">
-                    <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold flex-shrink-0"
-                         style="width: 38px; height: 38px; font-size: 0.8rem; background-color: {{ $course->color }};">
-                        {{ strtoupper(substr(optional(auth()->user())->name ?? 'U', 0, 2)) }}
+                    <div class="rounded-circle overflow-hidden flex-shrink-0" style="width: 38px; height: 38px;">
+                        @if(auth()->user() && auth()->user()->avatar)
+                            <img
+                                src="{{ asset('storage/' . auth()->user()->avatar) }}"
+                                alt="Avatar"
+                                style="width:100%; height:100%; object-fit:cover;">
+                        @else
+                            <div class="d-flex align-items-center justify-content-center text-white fw-bold"
+                                style="width:100%; height:100%; font-size:0.8rem; background-color: {{ $course->color }};">
+                                {{ strtoupper(substr(optional(auth()->user())->name ?? 'U', 0, 2)) }}
+                            </div>
+                        @endif
                     </div>
                     <div class="flex-grow-1">
                         <textarea class="form-control" name="body" rows="2"
@@ -178,9 +187,29 @@
                 @endphp
                 @forelse($comments as $comment)
                     <div class="d-flex gap-3 align-items-start comment-item">
-                        <div class="rounded-circle d-flex align-items-center justify-content-center fw-bold flex-shrink-0 {{ $comment->user_id === $course->creator_id ? 'creator-avatar' : 'comment-avatar-alt' }}"
-                             style="width: 36px; height: 36px; font-size: 0.75rem; @if($comment->user_id === $course->creator_id) background-color: {{ $course->color }}; color: #fff; @endif">
+                        <div class="rounded-circle overflow-hidden flex-shrink-0 {{ $comment->user_id === $course->creator_id ? 'creator-avatar' : 'comment-avatar-alt' }}" style="width: 36px; height: 36px;">
+                            @if(optional($comment->user)->avatar)
+                                <img
+                                    src="{{ asset('storage/' . $comment->user->avatar) }}"
+                                    alt="Avatar"
+                                    style="width:100%; height:100%; object-fit:cover;">
+                            @else
+                                <div class="d-flex align-items-center justify-content-center fw-bold"
+                                    style="
+                                        width:100%;
+                                        height:100%;
+                                        font-size:0.75rem;
+                                        @if($comment->user_id === $course->creator_id)
+                                            background-color: {{ $course->color }};
+                                            color:#fff;
+                                        @else
+                                            background-color:#f1f5f9;
+                                            color:#0f172a;
+                                        @endif
+                                    ">
                                     {{ strtoupper(substr(optional($comment->user)->name ?? ($comment->name ?? 'U'), 0, 2)) }}
+                                </div>
+                            @endif
                         </div>
                         <div class="flex-grow-1">
                             <div class="p-3 rounded-4 comment-bubble">

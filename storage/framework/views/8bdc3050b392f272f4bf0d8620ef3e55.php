@@ -48,11 +48,19 @@
                 
                 <div class="card-body px-4 py-3">
                     <div class="d-flex align-items-center gap-2 mb-3">
-                        <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold"
-                             style="width: 28px; height: 28px; font-size: 0.7rem; background: <?php echo e($course->color); ?>;">
-                            <?php echo e(strtoupper(substr($course->teacher_name, 0, 2))); ?>
+                        <?php if($course->creator?->avatar): ?>
+                            <img
+                                src="<?php echo e(asset('storage/' . $course->creator->avatar)); ?>"
+                                alt="<?php echo e($course->teacher_name); ?>"
+                                class="rounded-circle"
+                                style="width:28px;height:28px;object-fit:cover;">
+                        <?php else: ?>
+                            <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold"
+                                style="width:28px;height:28px;font-size:0.7rem;background:<?php echo e($course->color); ?>;">
+                                <?php echo e(strtoupper(substr($course->teacher_name, 0, 2))); ?>
 
-                        </div>
+                            </div>
+                        <?php endif; ?>
                         <span class="text-secondary small"><?php echo e($course->teacher_name); ?></span>
                     </div>
 

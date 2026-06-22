@@ -15,10 +15,19 @@
 
 <div class="welcome-banner-card mb-4">
     <div class="d-flex align-items-center gap-3">
-        <div class="d-flex align-items-center justify-content-center bg-primary text-white fw-bold rounded-3"
-             style="width: 68px; height: 68px; font-size: 1.5rem; flex-shrink: 0;">
-            <?php echo e(strtoupper(substr(auth()->user()->name, 0, 2))); ?>
+        <div class="rounded-3 overflow-hidden flex-shrink-0" style="width: 68px; height: 68px;">
+            <?php if(auth()->user()->avatar): ?>
+                <img
+                    src="<?php echo e(asset('storage/' . auth()->user()->avatar)); ?>"
+                    alt="Foto Profil"
+                    style="width:100%; height:100%; object-fit:cover;">
+            <?php else: ?>
+                <div class="d-flex align-items-center justify-content-center bg-primary text-white fw-bold w-100 h-100"
+                    style="font-size: 1.5rem;">
+                    <?php echo e(strtoupper(substr(auth()->user()->name, 0, 2))); ?>
 
+                </div>
+            <?php endif; ?>
         </div>
         <h4 class="fw-bold mb-0" style="font-size: 1.35rem;">
             Selamat Datang, <?php echo e(auth()->user()->name); ?>

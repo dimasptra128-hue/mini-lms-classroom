@@ -104,11 +104,17 @@
                 </div>
             </div>
             <a href="<?php echo e(route('settings')); ?>">
-                <div class="d-flex align-items-center justify-content-center bg-danger text-white fw-bold"
-                     style="border-radius: 50%; width: 36px; height: 36px; font-size: 0.82rem; flex-shrink: 0;">
-                    <?php echo e(strtoupper(substr(Auth::user()->name, 0, 2))); ?>
+                <?php if(Auth::user()->avatar): ?>
+                    <img src="<?php echo e(asset('storage/' . Auth::user()->avatar)); ?>"
+                        alt="Avatar"
+                        style="width:36px;height:36px;border-radius:50%;object-fit:cover;">
+                <?php else: ?>
+                    <div class="d-flex align-items-center justify-content-center bg-primary text-white fw-bold"
+                        style="border-radius: 50%; width: 36px; height: 36px; font-size: 0.82rem; flex-shrink: 0;">
+                        <?php echo e(strtoupper(substr(Auth::user()->name, 0, 2))); ?>
 
-                </div>
+                    </div>
+                <?php endif; ?>
             </a>
         </div>
     </header>
