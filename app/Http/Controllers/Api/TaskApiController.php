@@ -235,7 +235,17 @@ class TaskApiController extends Controller
                     ],
                 ],
 
-                'task' => $task,
+                'task' => [
+                    'id' => $task->id,
+                    'title' => $task->title,
+                    'description' => $task->description,
+                    'due_date' => $task->due_date,
+                    'file_name' => $task->file_name,
+                    'file_path' => $task->file_path,
+                    'file_url' => $task->file_path
+                        ? asset('storage/' . $task->file_path)
+                        : null,
+                ],
 
                 'userRole' => $userRole,
 
@@ -387,9 +397,19 @@ class TaskApiController extends Controller
 
         $userId = auth()->id();
 
-        $validated = $request->validate([
+        $request->validate([
             'submission_file' => 'nullable|file|max:10240',
         ]);
+
+        $submissions = $task->submissions ?? [];
+
+        if (is_string($submissions)) {
+            $submissions = json_decode($submissions, true) ?: [];
+        }
+
+        if (!is_array($submissions)) {
+            $submissions = [];
+        }
 
         $fileName = null;
         $filePath = null;
@@ -398,23 +418,25 @@ class TaskApiController extends Controller
             $request->hasFile('submission_file') &&
             $request->file('submission_file')->isValid()
         ) {
-            $fileName = $request->file('submission_file');
+
+            // Hapus file lama jika user pernah submit
+            if (
+                isset($submissions[$userId]['file_path']) &&
+                Storage::disk('public')->exists($submissions[$userId]['file_path'])
+            ) {
+                Storage::disk('public')->delete(
+                    $submissions[$userId]['file_path']
+                );
+            }
 
             $file = $request->file('submission_file');
+
             $fileName = $file->getClientOriginalName();
-            // simpan ke storage/app/public/submissions
-            $filePath = $file->store('submissions', 'public');
-        }
 
-        $submissions = $task->submissions ?? [];
-
-        // Jika submissions berupa JSON string
-        if (is_string($submissions)) {
-            $submissions = json_decode($submissions, true) ?: [];
-        }
-
-        if (!is_array($submissions)) {
-            $submissions = [];
+            $filePath = $file->store(
+                'submissions',
+                'public'
+            );
         }
 
         $submissions[$userId] = [
@@ -535,20 +557,14 @@ class TaskApiController extends Controller
             ->get();
 
         // Normalisasi submissions
-        $submissionsRaw = $task->submissions ?? [];
+        $submissions = $task->submissions ?? [];
 
-        if (is_string($submissionsRaw)) {
-            $submissionsRaw = json_decode($submissionsRaw, true) ?: [];
+        if (is_string($submissions)) {
+            $submissions = json_decode($submissions, true) ?: [];
         }
 
-        if (!is_array($submissionsRaw)) {
-            $submissionsRaw = [];
-        }
-
-        $submissions = [];
-
-        foreach ($submissionsRaw as $userId => $data) {
-            $submissions[(int) $userId] = $data;
+        if (!is_array($submissions)) {
+            $submissions = [];
         }
 
         // Hitung jumlah submit dan yang sudah dinilai

@@ -1,4 +1,4 @@
-@extends('layouts.auth')
+<!-- @extends('layouts.auth')
 
 @section('title', 'Lupa Kata Sandi')
 
@@ -120,4 +120,4 @@ function resetForm() {
 }
 </script>
 
-@endsection
+@endsection -->

@@ -85,7 +85,7 @@
                         Ingat Saya
                     </label>
                 </div>
-                <a href="<?php echo e(route('password.request')); ?>" class="text-link-custom">Lupa Kata Sandi?</a>
+                <!-- <a href="<?php echo e(route('password.request')); ?>" class="text-link-custom">Lupa Kata Sandi?</a> -->
             </div>
 
             <!-- Submit Button -->

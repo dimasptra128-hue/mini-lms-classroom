@@ -67,10 +67,10 @@
 
                     
                     <div class="d-flex align-items-center justify-content-between mt-2 pt-2 border-top">
-                        @if ($course->tasks_count > 0)
+                        @if ($course->pending_tasks_count > 0)
                             <span class="badge rounded-pill"
                                   style="background-color: #fee2e2; color: #dc2626; font-size: 0.75rem;">
-                                {{ $course->tasks_count }} Tugas Baru
+                                {{ $course->pending_tasks_count }} Tugas Baru
                             </span>
                         @else
                             <span class="badge rounded-pill"

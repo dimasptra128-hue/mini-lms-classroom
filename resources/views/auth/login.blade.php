@@ -87,7 +87,7 @@
                         Ingat Saya
                     </label>
                 </div>
-                <a href="{{ route('password.request') }}" class="text-link-custom">Lupa Kata Sandi?</a>
+                <!-- <a href="{{ route('password.request') }}" class="text-link-custom">Lupa Kata Sandi?</a> -->
             </div>
 
             <!-- Submit Button -->

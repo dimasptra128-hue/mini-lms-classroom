@@ -66,10 +66,10 @@
 
                     
                     <div class="d-flex align-items-center justify-content-between mt-2 pt-2 border-top">
-                        <?php if($course->tasks_count > 0): ?>
+                        <?php if($course->pending_tasks_count > 0): ?>
                             <span class="badge rounded-pill"
                                   style="background-color: #fee2e2; color: #dc2626; font-size: 0.75rem;">
-                                <?php echo e($course->tasks_count); ?> Tugas Baru
+                                <?php echo e($course->pending_tasks_count); ?> Tugas Baru
                             </span>
                         <?php else: ?>
                             <span class="badge rounded-pill"
