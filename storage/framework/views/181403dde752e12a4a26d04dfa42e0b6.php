@@ -259,9 +259,7 @@ use Illuminate\Support\Str;
                                                 <span class="fw-bold d-inline-flex align-items-center justify-content-center rounded-circle grade-badge"
                                                       style="width: 30px; height: 30px; background: <?php echo e($task->score_color); ?>18; color: <?php echo e($task->score_color); ?>; font-size: 0.8rem; cursor: help;"
                                                       title="Nilai <?php echo e($task->score); ?>">
-                                                    <?php echo e(isset($task->_model) ? $task->_model->scoreGrade() : (
-                                                        $task->score >= 90 ? 'A' : ($task->score >= 80 ? 'B' : ($task->score >= 70 ? 'C' : ($task->score >= 60 ? 'D' : 'E')))
-                                                    )); ?>
+                                                    <?php echo e($task->score >= 90 ? 'A' : ($task->score >= 80 ? 'B' : ($task->score >= 70 ? 'C' : ($task->score >= 60 ? 'D' : 'E')))); ?>
 
                                                 </span>
                                             <?php else: ?>
