@@ -18,7 +18,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Authentication
     Route::post('/logout', [AuthApiController::class, 'logout']);
 
-    // Course
+    // Course aaaa
     Route::get('/courses', [CourseApiController::class, 'index']);
     Route::get('/courses/{id}', [CourseApiController::class, 'show']);
     Route::post('/courses', [CourseApiController::class, 'store']);
