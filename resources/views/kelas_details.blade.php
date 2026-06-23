@@ -171,6 +171,7 @@
             {{-- Right column feed --}}
             <div class="col-lg-9 col-12">
                 {{-- Announce box --}}
+                @if($userRole === 'teacher')
                 <div class="card border-0 shadow-sm rounded-4 bg-white p-4 mb-4">
                     <div class="d-flex gap-3 align-items-start">
                         <div class="rounded-circle overflow-hidden"
@@ -198,7 +199,9 @@
                             </div>
                         </div>
                     </div>
+                    
                 </div>
+                @endif
 
                 {{-- Activity Stream Feed --}}
                 <div class="d-flex flex-column gap-3">
