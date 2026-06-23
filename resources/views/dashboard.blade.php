@@ -72,7 +72,7 @@
                 <div class="rounded-3 d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; background-color: #f0fdf4;">
                     <i class="bi bi-trophy text-success fs-5"></i>
                 </div>
-                <span class="badge rounded-pill" style="background-color: #ceeaf0; color: #1F7A8C; font-size: 0.75rem; font-weight: 600;">Baik</span>
+                <span class="badge rounded-pill" style="background-color: #ceeaf0; color: #1F7A8C; font-size: 0.75rem; font-weight: 600;">Nilai</span>
             </div>
             <div class="fw-bold fs-4 text-dark">{{ $averageGrade ?? '-' }}</div>
             <div class="text-secondary small">Rata-rata Nilai</div>

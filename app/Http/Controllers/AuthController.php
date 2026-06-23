@@ -68,10 +68,10 @@ class AuthController extends Controller
         return redirect()->to('/kelas')->with('success', 'Akun berhasil dibuat!');
     }
 
-    public function showForgotPassword()
-    {
-        return view('auth.forgot-password');
-    }
+    // public function showForgotPassword()
+    // {
+    //     return view('auth.forgot-password');
+    // }
 
     public function logout()
     {

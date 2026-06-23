@@ -57,7 +57,7 @@
                     <a href="<?php echo e(route('courses.show', $task->course_id)); ?>"
                         class="btn btn-sm text-white"
                         style="font-size: 0.8rem; background-color: <?php echo e($task->course->color); ?>; border-radius: 6px; padding: 0.3rem 0.75rem; font-weight: 600; border: none;">
-                        Kerjakan
+                        Lihat
                     </a>
                 <?php endif; ?>
             </div>

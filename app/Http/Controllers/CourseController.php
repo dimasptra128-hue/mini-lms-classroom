@@ -14,6 +14,7 @@ class CourseController extends Controller
     {
         // Ambil hanya kelas yang dibuat oleh user atau yang diikuti user
         $user = auth()->user();
+        $userId = $user->id;
 
         $courses = Course::with('creator') // ← tambah ini
             ->withCount(['users', 'tasks'])
@@ -24,6 +25,34 @@ class CourseController extends Controller
                     });
             })
             ->get();
+        
+        foreach ($courses as $course) {
+
+        // Jika user adalah pembuat kelas
+        if ($course->creator_id == $userId) {
+            $course->pending_tasks_count = 0;
+            continue;
+        }
+
+        $pendingTasks = Task::where('course_id', $course->id)
+            ->get()
+            ->filter(function ($task) use ($userId) {
+                $submissions = $task->submissions ?? [];
+
+                if (is_string($submissions)) {
+                    $submissions = json_decode($submissions, true) ?: [];
+                }
+
+                $submission = $submissions[$userId] ?? null;
+
+                return !(
+                    $submission &&
+                    ($submission['status'] ?? null) === 'Selesai'
+                );
+            });
+
+        $course->pending_tasks_count = $pendingTasks->count();
+    }
 
         return view('kelas', compact('courses'));
     }

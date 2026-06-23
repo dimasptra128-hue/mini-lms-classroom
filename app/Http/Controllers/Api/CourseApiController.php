@@ -16,6 +16,7 @@ class CourseApiController extends Controller
     public function index()
     {
         $user = auth()->user();
+        $userId = $user->id;
 
         $courses = Course::with('creator')
             ->withCount(['users', 'tasks'])
@@ -26,6 +27,34 @@ class CourseApiController extends Controller
                     });
             })
             ->get();
+
+        foreach ($courses as $course) {
+
+            if ($course->creator_id == $userId) {
+                $course->pending_tasks_count = 0;
+                continue;
+            }
+
+            $pendingTasks = Task::where('course_id', $course->id)
+                ->get()
+                ->filter(function ($task) use ($userId) {
+
+                    $submissions = $task->submissions ?? [];
+
+                    if (is_string($submissions)) {
+                        $submissions = json_decode($submissions, true) ?: [];
+                    }
+
+                    $submission = $submissions[$userId] ?? null;
+
+                    return !(
+                        $submission &&
+                        ($submission['status'] ?? null) === 'Selesai'
+                    );
+                });
+
+            $course->pending_tasks_count = $pendingTasks->count();
+        }
 
         return response()->json([
             'success' => true,
@@ -141,6 +170,43 @@ class CourseApiController extends Controller
         ->orderBy('due_date')
         ->get();
 
+        $feedItems = collect();
+        foreach ($materials as $material) {
+            $feedItems->push([
+                'id' => $material->id,
+                'type' => 'materi',
+                'title' => 'Membagikan Materi Baru',
+                'content' => $material->title,
+                'desc' => \Illuminate\Support\Str::limit(
+                    $material->description,
+                    100
+                ),
+                'date' => $material->created_at,
+                'icon' => 'bi-file-earmark-text-fill',
+                'color' => $course->color,
+            ]);
+        }
+
+        foreach ($tasks as $task) {
+            $feedItems->push([
+                'id' => $task->id,
+                'type' => 'tugas',
+                'title' => 'Membuat Tugas Baru',
+                'content' => $task->title,
+                'desc' => \Illuminate\Support\Str::limit(
+                    $task->description,
+                    100
+                ),
+                'date' => $task->created_at,
+                'icon' => 'bi-clipboard-check-fill',
+                'color' => '#f59e0b',
+            ]);
+        }
+
+        $feedItems = $feedItems
+            ->sortByDesc('date')
+            ->values();
+
         return response()->json([
             'success' => true,
             'message' => 'Detail kelas berhasil diambil.',
@@ -150,6 +216,7 @@ class CourseApiController extends Controller
                 'students' => $students,
                 'materials' => $materials,
                 'tasks' => $tasks,
+                'feedItems' => $feedItems,
             ],
         ], 200);
     }
@@ -177,6 +244,17 @@ class CourseApiController extends Controller
                 'success' => false,
                 'message' => 'Kelas tidak ditemukan.',
             ], 404);
+        }
+
+        // Hanya creator atau admin yang boleh menghapus
+        if (
+            $course->creator_id !== auth()->id() &&
+            auth()->user()->role !== 'admin'
+        ) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tidak memiliki izin menghapus kelas.',
+            ], 403);
         }
 
         $course->delete();
@@ -234,6 +312,14 @@ class CourseApiController extends Controller
             ], 404);
         }
 
+        // Creator tidak boleh keluar dari kelasnya sendiri
+        if ($course->creator_id == auth()->id()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Pengajar tidak dapat keluar dari kelas yang dibuatnya sendiri.'
+            ], 400);
+        }
+
         if (!$course->users()->where('users.id', auth()->id())->exists()) {
             return response()->json([
                 'success' => false,
@@ -258,6 +344,25 @@ class CourseApiController extends Controller
                 'success' => false,
                 'message' => 'Kelas tidak ditemukan.'
             ], 404);
+        }
+
+        // Hanya creator atau admin
+        if (
+            $course->creator_id !== auth()->id() &&
+            auth()->user()->role !== 'admin'
+        ) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tidak memiliki izin.'
+            ], 403);
+        }
+
+        // Tidak boleh mengeluarkan creator
+        if ($user_id == $course->creator_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Pengajar tidak dapat dikeluarkan.'
+            ], 400);
         }
 
         if (!$course->users()->where('users.id', $user_id)->exists()) {

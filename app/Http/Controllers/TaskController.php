@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use App\Models\MockData;
 use App\Models\Task;
 use App\Models\Course;
 use Carbon\Carbon;
@@ -73,24 +72,6 @@ class TaskController extends Controller
                 'otherTasks' => $otherTasks
             ]);
         }
-
-        // Fallback to mock data (legacy)
-        $course = MockData::getMockCourses()->firstWhere('id', $course_id);
-        if (!$course) abort(404);
-
-        $task = $course->tasks->firstWhere('id', $task_id);
-        if (!$task) abort(404);
-
-        $userRole = ($course->creator_id === 1) ? 'teacher' : 'student';
-
-        $otherTasks = $course->tasks->where('id', '!=', $task->id)->take(4);
-
-        return view('task_details', [
-            'course' => $course,
-            'task' => $task,
-            'userRole' => $userRole,
-            'otherTasks' => $otherTasks
-        ]);
     }
 
     public function download($course_id, $task_id)
@@ -231,7 +212,11 @@ class TaskController extends Controller
     public function index()
     {
         // Ambil course IDs yang diikuti user yang login
-        $userCourseIds = auth()->user()->courses()->pluck('courses.id')->toArray();
+        $userCourseIds = auth()->user()
+            ->courses()
+            ->wherePivot('role', 'student')
+            ->pluck('courses.id')
+            ->toArray();
 
         // Ambil semua task dari course yang diikuti user, diurutkan by due_date
         $allTasks = Task::with('course')

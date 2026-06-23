@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Material;
+use App\Models\Task;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
@@ -18,8 +20,22 @@ class DashboardController extends Controller
 
         // 1. Statistik Dasar
         $coursesCount = $user->courses()->count();
-        $tasksCount = $user->tasks()->where('due_date', '>=', now())->count();
+        $studentCourseIds = $user->courses()->wherePivot('role', 'student')->pluck('courses.id');
+        $userId = $user->id;
 
+        $tasksCount = \App\Models\Task::whereIn('course_id', $studentCourseIds)
+            ->get()
+            ->filter(function ($task) use ($userId) {
+                $subs = $task->submissions ?? [];
+                if (is_string($subs)) {
+                    $subs = json_decode($subs, true) ?: [];
+                }
+                $userSubmission = $subs[$userId] ?? null;
+                return !(
+                    $userSubmission &&
+                    ($userSubmission['status'] ?? null) === 'Selesai'
+                );
+            })->count();
         // 2. Rata-rata Nilai — ambil dari database
         $averageGrade = null;
 
@@ -34,46 +50,81 @@ class DashboardController extends Controller
                 $averageGrade = round($teacherTasks->avg('score'));
             }
         } else {
-            // Sebagai siswa: kumpulkan nilai dari submissions (tasks.submissions[user_id].score)
-            $studentCourses = $user->courses()->wherePivot('role', 'student')->with('tasks')->get();
+            $studentCourseIds = $user->courses()
+                ->wherePivot('role', 'student')
+                ->pluck('courses.id');
+
+            $tasks = \App\Models\Task::whereIn('course_id', $studentCourseIds)->get();
+
             $scores = [];
-            foreach ($studentCourses as $course) {
-                $tasksRaw = $course->tasks ?? [];
-                if (is_string($tasksRaw)) {
-                    $tasksRaw = json_decode($tasksRaw, true) ?: [];
+
+            foreach ($tasks as $task) {
+
+                $subs = $task->submissions ?? [];
+
+                if (is_string($subs)) {
+                    $subs = json_decode($subs, true) ?: [];
                 }
-                $tasks = collect($tasksRaw);
-                foreach ($tasks as $task) {
-                    $subs = $task->submissions ?? [];
-                    if (is_string($subs)) $subs = json_decode($subs, true) ?: [];
-                    $entry = $subs[$user->id] ?? null;
-                    if ($entry && isset($entry['score']) && is_numeric($entry['score'])) {
-                        $scores[] = $entry['score'];
-                    }
-                    // fallback: if task has a global score value, include it if it's numeric
-                    if ((!$entry || !isset($entry['score'])) && isset($task->score) && is_numeric($task->score)) {
-                        $scores[] = $task->score;
-                    }
+
+                $userSubmission = $subs[$user->id] ?? null;
+
+                if (
+                    $userSubmission &&
+                    isset($userSubmission['score']) &&
+                    is_numeric($userSubmission['score'])
+                ) {
+                    $scores[] = $userSubmission['score'];
                 }
             }
-            if (count($scores) > 0) {
+
+            if (!empty($scores)) {
                 $averageGrade = round(array_sum($scores) / count($scores));
             }
         }
 
         // 3. Aktivitas Terbaru: fallback aman berdasarkan tugas milik user
-        $recentActivities = $user->tasks()->latest()->take(5)->get()->map(function ($task) {
+        $recentTasks = Task::whereHas('course', function ($q) use ($user) { $q->where('creator_id', $user->id);
+        })
+        ->latest()
+        ->get()
+        ->map(function ($task) {
             return [
-                'title' => 'Tugas: ' . ($task->title ?? 'Tidak diketahui'),
-                'time' => optional($task->updated_at)->diffForHumans() ?? now()->diffForHumans(),
+                'title' => 'Tugas: ' . $task->title,
+                'time' => $task->created_at->diffForHumans(),
                 'icon' => 'bi-file-earmark-text',
                 'color_bg' => '#dcfce7',
                 'text_color' => 'text-success',
-                'badge' => $task->status ?? 'Baru',
+                'badge' => 'Tugas',
                 'badge_bg' => '#f0fdf4',
-                'badge_color' => '#16a34a'
+                'badge_color' => '#16a34a',
+                'created_at' => $task->created_at,
             ];
         });
+
+        $recentMaterials = Material::whereHas('course', function ($q) use ($user) {
+            $q->where('creator_id', $user->id);
+        })
+        ->latest()
+        ->get()
+        ->map(function ($material) {
+            return [
+                'title' => 'Materi: ' . $material->title,
+                'time' => $material->created_at->diffForHumans(),
+                'icon' => 'bi-book',
+                'color_bg' => '#dbeafe',
+                'text_color' => 'text-primary',
+                'badge' => 'Materi',
+                'badge_bg' => '#eff6ff',
+                'badge_color' => '#2563eb',
+                'created_at' => $material->created_at,
+            ];
+        });
+
+        $recentActivities = $recentTasks
+            ->concat($recentMaterials)
+            ->sortByDesc('created_at')
+            ->take(5)
+            ->values();
 
         return view('dashboard', compact('coursesCount', 'tasksCount', 'averageGrade', 'recentActivities'));
     }
