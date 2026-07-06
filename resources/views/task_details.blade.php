@@ -136,6 +136,8 @@
             </h6>
 
             {{-- Comment / Answer Form --}}
+            @php $commentArchivedFlag = isset($isCourseArchived) ? $isCourseArchived : ($course->is_archived ?? false); @endphp
+            @if(!$commentArchivedFlag)
             <form action="{{ route('comments.store', [$course->id, 'tasks', $task->id]) }}" method="POST" class="mb-4">
                 @csrf
                 <input type="hidden" name="reply_to" id="replyToInput" value="">
@@ -179,6 +181,12 @@
                     </div>
                 </div>
             </form>
+            @else
+            <div class="mb-4 p-3 rounded-3 d-flex align-items-center gap-2" style="background-color: #fef9c3; border: 1px dashed #fbbf24; font-family: var(--font-sans);">
+                <i class="bi bi-archive-fill text-warning"></i>
+                <span class="text-secondary small">Komentar dinonaktifkan karena kelas ini telah diarsipkan.</span>
+            </div>
+            @endif
 
             {{-- Comments List --}}
             <div class="d-flex flex-column gap-3">
@@ -258,6 +266,23 @@
                         $submissionsRaw = json_decode($submissionsRaw, true) ?: [];
                     }
                     $userSubmission = $submissionsRaw[auth()->id()] ?? null;
+
+                    $isCourseArchived = $course->is_archived ?? false;
+                    $isOverdue = false;
+                    $isSubmissionBlocked = false;
+                    if ($isCourseArchived) {
+                        $isSubmissionBlocked = true;
+                    } elseif ($task->due_date) {
+                        try {
+                            $dueDate = \Carbon\Carbon::parse($task->due_date);
+                            $isOverdue = now()->greaterThan($dueDate);
+                            if ($isOverdue && $task->block_late_submissions) {
+                                $isSubmissionBlocked = true;
+                            }
+                        } catch (\Exception $e) {
+                            $isOverdue = false;
+                        }
+                    }
                 @endphp
                 @if($userSubmission && data_get($userSubmission, 'status') === 'Selesai')
                     <span class="badge rounded-pill text-success" style="background-color: #dcfce7; font-size: 0.75rem; font-weight: 600;">Diserahkan</span>
@@ -315,34 +340,56 @@
                         </div>
                     @endif
 
-                    <form action="{{ route('tasks.cancelSubmission', [$course->id, $task->id]) }}" method="POST" class="mt-3">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" class="btn btn-outline-secondary w-100 rounded-3 small" style="font-size: 0.85rem; font-weight: 600;">Batalkan Pengiriman</button>
-                    </form>
+                    @if(!$isSubmissionBlocked)
+                        <form action="{{ route('tasks.cancelSubmission', [$course->id, $task->id]) }}" method="POST" class="mt-3">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="btn btn-outline-secondary w-100 rounded-3 small" style="font-size: 0.85rem; font-weight: 600;">Batalkan Pengiriman</button>
+                        </form>
+                    @else
+                        <div class="mt-3 p-2.5 text-center rounded-3 bg-light" style="font-size: 0.72rem; color: #64748b; font-family: var(--font-sans); border: 1px dashed #cbd5e1;">
+                            <i class="bi bi-info-circle me-1"></i> Pengiriman tidak dapat dibatalkan karena batas waktu telah terlewati.
+                        </div>
+                    @endif
                 </div>
             @else
-                <div class="py-2">
-                    <form id="submitForm" action="{{ route('tasks.submit', [$course->id, $task->id]) }}" method="POST" enctype="multipart/form-data">
-                        @csrf
-                        <div class="mb-3">
-                            <div class="p-3 border rounded-3 text-center bg-light bg-opacity-30 cursor-pointer file-input-box" 
-                                 onclick="document.getElementById('taskSubmitFile').click()"
-                                 style="border-style: dashed !important;">
-                                <i class="bi bi-plus-lg fs-5 text-secondary d-block mb-1"></i>
-                                <span class="small fw-semibold text-secondary">Tambah atau buat file jawaban</span>
-                                <input type="file" id="taskSubmitFile" name="submission_file" style="display:none;" onchange="fileSelected(this)">
-                            </div>
-                            <div id="fileSelectedDisplay" class="d-none p-2 border rounded-3 align-items-center justify-content-between mt-2 bg-light">
-                                <span class="small text-truncate text-dark fw-medium" style="max-width: 200px;" id="selectedFileName">file.pdf</span>
-                                <button type="button" class="btn-close" style="font-size:0.75rem;" onclick="removeSelectedFile()"></button>
-                            </div>
+                @if($isSubmissionBlocked)
+                    <div class="py-4 text-center">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 50px; height: 50px; background-color: {{ $isCourseArchived ? '#fef3c7' : '#fee2e2' }};">
+                            <i class="fs-4 {{ $isCourseArchived ? 'bi bi-archive-fill text-warning' : 'bi bi-lock-fill text-danger' }}"></i>
                         </div>
-                        <button id="submitBtn" type="submit" class="btn text-white w-100 rounded-3" style="background-color: {{ $course->color }}; font-weight: 600; font-size: 0.85rem; border: none; padding: 0.6rem;">
-                            Tandai sebagai Selesai
-                        </button>
-                    </form>
-                </div>
+                        <p class="text-dark fw-bold small mb-1">{{ $isCourseArchived ? 'Kelas Diarsipkan' : 'Pengumpulan Ditutup' }}</p>
+                        <p class="text-secondary mb-0 px-2" style="font-size: 0.78rem; line-height: 1.5; font-family: var(--font-sans);">
+                            @if($isCourseArchived)
+                                Kelas ini telah diarsipkan. Pengumpulan tugas tidak lagi tersedia.
+                            @else
+                                Anda tidak dapat mengirimkan tugas karena batas waktu pengumpulan telah terlewati.
+                            @endif
+                        </p>
+                    </div>
+                @else
+                    <div class="py-2">
+                        <form id="submitForm" action="{{ route('tasks.submit', [$course->id, $task->id]) }}" method="POST" enctype="multipart/form-data">
+                            @csrf
+                            <div class="mb-3">
+                                <div class="p-3 border rounded-3 text-center bg-light bg-opacity-30 cursor-pointer file-input-box" 
+                                     onclick="document.getElementById('taskSubmitFile').click()"
+                                     style="border-style: dashed !important;">
+                                    <i class="bi bi-plus-lg fs-5 text-secondary d-block mb-1"></i>
+                                    <span class="small fw-semibold text-secondary">Tambah atau buat file jawaban</span>
+                                    <input type="file" id="taskSubmitFile" name="submission_file" style="display:none;" onchange="fileSelected(this)">
+                                </div>
+                                <div id="fileSelectedDisplay" class="d-none p-2 border rounded-3 align-items-center justify-content-between mt-2 bg-light">
+                                    <span class="small text-truncate text-dark fw-medium" style="max-width: 200px;" id="selectedFileName">file.pdf</span>
+                                    <button type="button" class="btn-close" style="font-size:0.75rem;" onclick="removeSelectedFile()"></button>
+                                </div>
+                            </div>
+                            <button id="submitBtn" type="submit" class="btn text-white w-100 rounded-3" style="background-color: {{ $course->color }}; font-weight: 600; font-size: 0.85rem; border: none; padding: 0.6rem;">
+                                Tandai sebagai Selesai
+                            </button>
+                        </form>
+                    </div>
+                @endif
             @endif
         </div>
         @endif

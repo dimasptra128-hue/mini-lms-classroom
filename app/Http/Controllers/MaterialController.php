@@ -16,6 +16,10 @@ class MaterialController extends Controller
             abort(404, 'Kelas tidak ditemukan.');
         }
 
+        if ($course->is_archived) {
+            return back()->with('error', 'Tidak dapat menambahkan materi karena kelas ini diarsipkan.');
+        }
+
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',

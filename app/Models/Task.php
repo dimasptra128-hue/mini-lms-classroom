@@ -16,6 +16,7 @@ class Task extends Model
     protected $casts = [
         'comments' => 'array',
         'submissions' => 'array',
+        'block_late_submissions' => 'boolean',
     ];
 
     // ==========================================

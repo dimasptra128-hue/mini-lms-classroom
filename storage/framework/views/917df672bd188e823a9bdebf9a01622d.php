@@ -57,7 +57,7 @@
                     <a href="<?php echo e(route('courses.show', $task->course_id)); ?>"
                         class="btn btn-sm text-white"
                         style="font-size: 0.8rem; background-color: <?php echo e($task->course->color); ?>; border-radius: 6px; padding: 0.3rem 0.75rem; font-weight: 600; border: none;">
-                        Lihat
+                        Kerjakan
                     </a>
                 <?php endif; ?>
             </div>
@@ -73,4 +73,4 @@
 
 <?php $__env->stopSection(); ?>
 
-<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\laragon\www\mini-lms-classroom\resources\views/tasks.blade.php ENDPATH**/ ?>
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH D:\laragon\www\mini-lms-classroom\resources\views/tasks.blade.php ENDPATH**/ ?>

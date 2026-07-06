@@ -21,6 +21,22 @@
     }
 @endphp
 
+@php
+    $isCourseArchived = $course->is_archived ?? false;
+@endphp
+
+{{-- Warning Banner for Archived Course --}}
+@if($isCourseArchived)
+    <div class="alert alert-warning border-0 rounded-4 shadow-sm mb-4" role="alert" style="background-color: #fef3c7; color: #b45309; font-family: var(--font-sans);">
+        <div class="d-flex align-items-center gap-2.5">
+            <i class="bi bi-archive-fill fs-5"></i>
+            <div>
+                <strong>Kelas diarsipkan:</strong> Kelas ini dalam status arsip. Semua materi masih dapat diunduh dan dipelajari, tetapi tidak ada aktivitas penugasan, komentar, atau interaksi lainnya.
+            </div>
+        </div>
+    </div>
+@endif
+
 {{-- Alert Messages --}}
 @if (session('success'))
     <div class="alert alert-success alert-dismissible fade show border-0 rounded-4 shadow-sm mb-4" role="alert" style="background-color: #dcfce7; color: #16a34a; font-family: var(--font-sans);">
@@ -61,13 +77,25 @@
                     </button>
                 </form>
             @elseif($course->creator_id === auth()->id())
-                <form action="{{ route('courses.destroy', $course->id) }}" method="POST" onsubmit="return confirm('Apakah kamu yakin ingin menghapus kelas {{ $course->name }}? Semua materi, tugas, dan nilai di kelas ini akan dihapus permanen.')">
-                    @csrf
-                    @method('DELETE')
-                    <button type="submit" class="btn btn-sm btn-danger px-3 py-2 rounded-3 fw-bold d-inline-flex align-items-center gap-1.5" style="border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.15); font-size: 0.8rem; background-color: #dc2626;">
-                        <i class="bi bi-trash"></i> Hapus Kelas
-                    </button>
-                </form>
+                <div class="d-flex gap-2 flex-wrap">
+                    <form action="{{ route('courses.archive', $course->id) }}" method="POST">
+                        @csrf
+                        <button type="submit" class="btn btn-sm btn-warning px-3 py-2 rounded-3 fw-bold d-inline-flex align-items-center gap-1.5 text-white" style="border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.15); font-size: 0.8rem; background-color: #d97706;">
+                            @if($course->is_archived)
+                                <i class="bi bi-folder-symlink-fill"></i> Aktifkan Kelas
+                            @else
+                                <i class="bi bi-archive-fill"></i> Arsipkan Kelas
+                            @endif
+                        </button>
+                    </form>
+                    <form action="{{ route('courses.destroy', $course->id) }}" method="POST" onsubmit="return confirm('Apakah kamu yakin ingin menghapus kelas {{ $course->name }}? Semua materi, tugas, dan nilai di kelas ini akan dihapus permanen.')">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="btn btn-sm btn-danger px-3 py-2 rounded-3 fw-bold d-inline-flex align-items-center gap-1.5" style="border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.15); font-size: 0.8rem; background-color: #dc2626;">
+                            <i class="bi bi-trash"></i> Hapus Kelas
+                        </button>
+                    </form>
+                </div>
             @endif
         </div>
         <div class="d-flex align-items-center justify-content-between mt-auto pt-3 border-top border-white border-opacity-10">
@@ -171,7 +199,7 @@
             {{-- Right column feed --}}
             <div class="col-lg-9 col-12">
                 {{-- Announce box --}}
-                @if($userRole === 'teacher')
+                @if($userRole === 'teacher' && !$isCourseArchived)
                 <div class="card border-0 shadow-sm rounded-4 bg-white p-4 mb-4">
                     <div class="d-flex gap-3 align-items-start">
                         <div class="rounded-circle overflow-hidden"
@@ -261,7 +289,7 @@
                 <h6 class="fw-bold mb-0 text-dark">Daftar Materi</h6>
                 <p class="text-secondary mb-0 small">Bahan pembelajaran untuk diunduh dan dipelajari</p>
             </div>
-            @if($userRole === 'teacher' || $course->creator_id === auth()->id())
+            @if(($userRole === 'teacher' || $course->creator_id === auth()->id()) && !$isCourseArchived)
                 <button type="button" class="btn text-white px-3 py-2 rounded-3 d-flex align-items-center gap-1.5 fw-semibold" 
                         style="background-color: {{ $course->color }}; font-size: 0.82rem;"
                         data-bs-toggle="modal" data-bs-target="#modalTambahMateri">
@@ -313,7 +341,7 @@
                 <h6 class="fw-bold mb-0 text-dark">Daftar Tugas Kelas</h6>
                 <p class="text-secondary mb-0 small">Kumpulan latihan dan ujian kelas</p>
             </div>
-            @if($userRole === 'teacher' || $course->creator_id === auth()->id())
+            @if(($userRole === 'teacher' || $course->creator_id === auth()->id()) && !$isCourseArchived)
                 <button type="button" class="btn text-white px-3 py-2 rounded-3 d-flex align-items-center gap-1.5 fw-semibold" 
                         style="background-color: {{ $course->color }}; font-size: 0.82rem;"
                         data-bs-toggle="modal" data-bs-target="#modalTambahTugas">
@@ -564,6 +592,13 @@
                             <span class="input-group-icon"><i class="bi bi-calendar3"></i></span>
                             <input type="datetime-local" class="form-control-custom" name="due_date" required>
                         </div>
+                    </div>
+                    
+                    <div class="mb-3 form-check d-flex align-items-center gap-2" style="padding-left: 0;">
+                        <input type="checkbox" class="form-check-input" id="block_late_submissions" name="block_late_submissions" value="1" style="width: 17px; height: 17px; cursor: pointer; margin-left: 0; margin-top: 0;">
+                        <label class="form-check-label text-dark small fw-semibold" for="block_late_submissions" style="cursor: pointer; user-select: none; margin-bottom: 0; font-family: var(--font-sans);">
+                            Tutup pengumpulan setelah melewati tenggat waktu
+                        </label>
                     </div>
 
                     <div class="mb-3">

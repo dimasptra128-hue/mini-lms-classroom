@@ -12,11 +12,19 @@ class TaskController extends Controller
 {
     public function store(Request $request, $id)
     {
+        $course = Course::find($id);
+        if (!$course) abort(404);
+
+        if ($course->is_archived) {
+            return back()->with('error', 'Tidak dapat menambahkan tugas karena kelas ini diarsipkan.');
+        }
+
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'due_date' => 'required',
             'file_upload' => 'nullable|file|max:10240',
+            'block_late_submissions' => 'nullable',
         ]);
 
         // Parse datetime-local input (e.g. 2026-06-17T14:30) to DB-friendly string
@@ -30,16 +38,16 @@ class TaskController extends Controller
         $fileName = null;
         $filePath = null;
         if ($request->hasFile('file_upload') && $request->file('file_upload')->isValid()) {
-        $file = $request->file('file_upload');
-        $fileName = $file->getClientOriginalName();
-        
-        // 1. Simpan langsung ke disk 'public' di dalam folder 'task_uploads'
-        // Ini akan otomatis masuk ke: storage/app/public/task_uploads
-        $storedPath = $file->store('task_uploads', 'public');
-        
-        // 2. Simpan path aslinya (misal: "task_uploads/random_name.docx") ke database
-        $filePath = $storedPath; 
-    }
+            $file = $request->file('file_upload');
+            $fileName = $file->getClientOriginalName();
+            
+            // 1. Simpan langsung ke disk 'public' di dalam folder 'task_uploads'
+            // Ini akan otomatis masuk ke: storage/app/public/task_uploads
+            $storedPath = $file->store('task_uploads', 'public');
+            
+            // 2. Simpan path aslinya (misal: "task_uploads/random_name.docx") ke database
+            $filePath = $storedPath; 
+        }
 
         Task::create([
             'course_id' => $id,
@@ -48,6 +56,7 @@ class TaskController extends Controller
             'due_date' => $due_str,
             'file_name' => $fileName,
             'file_path' => $filePath,
+            'block_late_submissions' => $request->has('block_late_submissions'),
         ]);
 
         return back()->with('success', 'Tugas berhasil dibuat!');
@@ -129,8 +138,24 @@ class TaskController extends Controller
         $course = Course::find($course_id);
         if (! $course) abort(404);
 
+        if ($course->is_archived) {
+            return back()->with('error', 'Tidak dapat mengumpulkan tugas karena kelas ini diarsipkan.');
+        }
+
         $task = Task::where('course_id', $course->id)->find($task_id);
         if (! $task) abort(404);
+
+        // Cek apakah deadline telah lewat dan late submissions diblokir
+        if ($task->block_late_submissions && $task->due_date) {
+            try {
+                $dueDate = Carbon::parse($task->due_date);
+                if (now()->greaterThan($dueDate)) {
+                    return back()->with('error', 'Pengumpulan tugas ditutup karena telah melewati tenggat waktu.');
+                }
+            } catch (\Exception $e) {
+                // Abaikan format tanggal tidak valid
+            }
+        }
 
         $userId = auth()->id();
 
@@ -183,8 +208,24 @@ class TaskController extends Controller
         $course = Course::find($course_id);
         if (! $course) abort(404);
 
+        if ($course->is_archived) {
+            return back()->with('error', 'Tidak dapat membatalkan pengiriman karena kelas ini diarsipkan.');
+        }
+
         $task = Task::where('course_id', $course->id)->find($task_id);
         if (! $task) abort(404);
+
+        // Cek apakah deadline telah lewat dan late submissions diblokir
+        if ($task->block_late_submissions && $task->due_date) {
+            try {
+                $dueDate = Carbon::parse($task->due_date);
+                if (now()->greaterThan($dueDate)) {
+                    return back()->with('error', 'Tidak dapat membatalkan pengiriman tugas karena batas waktu pengumpulan telah terlewati.');
+                }
+            } catch (\Exception $e) {
+                // Abaikan
+            }
+        }
 
         $userId = auth()->id();
 
@@ -211,10 +252,11 @@ class TaskController extends Controller
 
     public function index()
     {
-        // Ambil course IDs yang diikuti user yang login
+        // Ambil course IDs yang diikuti user yang login (hanya kelas aktif / tidak diarsipkan)
         $userCourseIds = auth()->user()
             ->courses()
             ->wherePivot('role', 'student')
+            ->where('is_archived', false)
             ->pluck('courses.id')
             ->toArray();
 
