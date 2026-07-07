@@ -27,34 +27,36 @@ class CourseController extends Controller
             ->get();
         
         foreach ($courses as $course) {
+            // Jika user adalah pembuat kelas
+            if ($course->creator_id == $userId) {
+                $course->pending_tasks_count = 0;
+                continue;
+            }
 
-        // Jika user adalah pembuat kelas
-        if ($course->creator_id == $userId) {
-            $course->pending_tasks_count = 0;
-            continue;
+            $pendingTasks = Task::where('course_id', $course->id)
+                ->get()
+                ->filter(function ($task) use ($userId) {
+                    $submissions = $task->submissions ?? [];
+
+                    if (is_string($submissions)) {
+                        $submissions = json_decode($submissions, true) ?: [];
+                    }
+
+                    $submission = $submissions[$userId] ?? null;
+
+                    return !(
+                        $submission &&
+                        ($submission['status'] ?? null) === 'Selesai'
+                    );
+                });
+
+            $course->pending_tasks_count = $pendingTasks->count();
         }
 
-        $pendingTasks = Task::where('course_id', $course->id)
-            ->get()
-            ->filter(function ($task) use ($userId) {
-                $submissions = $task->submissions ?? [];
+        $activeCourses = $courses->where('is_archived', false);
+        $archivedCourses = $courses->where('is_archived', true);
 
-                if (is_string($submissions)) {
-                    $submissions = json_decode($submissions, true) ?: [];
-                }
-
-                $submission = $submissions[$userId] ?? null;
-
-                return !(
-                    $submission &&
-                    ($submission['status'] ?? null) === 'Selesai'
-                );
-            });
-
-        $course->pending_tasks_count = $pendingTasks->count();
-    }
-
-        return view('kelas', compact('courses'));
+        return view('kelas', compact('activeCourses', 'archivedCourses'));
     }
 
     public function show($id)
@@ -314,6 +316,10 @@ class CourseController extends Controller
             abort(404, 'Kelas tidak ditemukan');
         }
 
+        if ($course->is_archived) {
+            return back()->with('error', 'Tidak dapat menambahkan komentar karena kelas ini diarsipkan.');
+        }
+
         if ($type === 'tasks') {
             $item = Task::where('course_id', $course->id)->find($item_id);
         } elseif ($type === 'materials') {
@@ -387,5 +393,21 @@ class CourseController extends Controller
     {
         // DIUBAH: mengarah ke folder 'kelas' dan file 'edit.blade.php' (atau sejenisnya jika ada)
         return view('kelas.edit', compact('course'));
+    }
+
+    public function archive($id)
+    {
+        $course = Course::find($id);
+        if (!$course) abort(404);
+
+        if ($course->creator_id !== auth()->id() && auth()->user()->role !== 'admin') {
+            abort(403, 'Hanya pembuat kelas yang dapat mengarsipkan kelas.');
+        }
+
+        $course->is_archived = !$course->is_archived;
+        $course->save();
+
+        $status = $course->is_archived ? 'diarsipkan' : 'diaktifkan kembali';
+        return back()->with('success', "Kelas berhasil {$status}.");
     }
 }

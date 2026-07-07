@@ -30,6 +30,7 @@ Route::get('/kelas/{id}', [CourseController::class, 'show'])->name('courses.show
 Route::post('/kelas/create', [CourseController::class, 'create'])->name('courses.create');
 Route::post('/kelas/join', [CourseController::class, 'join'])->name('courses.join');
 Route::delete('/kelas/{id}', [CourseController::class, 'destroy'])->name('courses.destroy');
+Route::post('/kelas/{id}/archive', [CourseController::class, 'archive'])->name('courses.archive');
 Route::post('/kelas/{id}/materials', [MaterialController::class, 'store'])->name('materials.store');
 Route::post('/kelas/{id}/tasks', [TaskController::class, 'store'])->name('tasks.store');
 

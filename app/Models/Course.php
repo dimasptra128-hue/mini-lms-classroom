@@ -17,6 +17,7 @@ class Course extends Model
         'materials' => 'json',
         'tasks' => 'json',
         'users' => 'json',
+        'is_archived' => 'boolean',
     ];
 
     public function materials()
