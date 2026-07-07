@@ -18,8 +18,18 @@ Route::get('/', function () {
 // Rute Otentikasi (Mock tampilan guest)
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
-Route::get('/forgot-password', [AuthController::class, 'showForgotPassword'])->name('password.request');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+// Rute Pemulihan Kata Sandi (Lupa Password)
+Route::middleware(['guest', 'throttle:6,1'])->group(function () {
+    Route::get('/forgot-password', [AuthController::class, 'showForgotPassword'])->name('password.request');
+    Route::post('/forgot-password', [AuthController::class, 'sendOtp'])->name('password.email');
+    Route::get('/forgot-password/verify-otp', [AuthController::class, 'showVerifyOtp'])->name('password.otp');
+    Route::post('/forgot-password/verify-otp', [AuthController::class, 'verifyOtp'])->name('password.otp.verify');
+    Route::post('/forgot-password/resend', [AuthController::class, 'resendOtp'])->name('password.resend');
+    Route::get('/forgot-password/reset', [AuthController::class, 'showResetPassword'])->name('password.reset-form');
+    Route::post('/forgot-password/reset', [AuthController::class, 'resetPassword'])->name('password.update');
+});
 
 // Dashboard & Fitur Umum
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
